@@ -70,22 +70,26 @@ mod rabin_miller {
         k: usize,
         rng: &mut R,
     ) -> bool {
-        use crate::alias::{Vec, repeat_with, vec};
+        use crate::alias::{repeat_with, vec};
 
-        let n = &n.to_biguint().unwrap();
-        let two = &biguint!(2);
+        let n = n.to_biguint().unwrap();
+        let two = biguint!(2);
 
-        if n <= &BigUint::one() {
+        if !n.bit(0) && n != two {
+            return false; // even (and not 2)
+        }
+
+        if n <= BigUint::one() {
             return false;
-        } else if n <= &biguint!(3) {
+        } else if n <= biguint!(3) {
             return true;
-        } else if n <= &biguint!(0xFFFF_FFFF_FFFF_FFFFu64) {
+        } else if n <= biguint!(0xFFFF_FFFF_FFFF_FFFFu64) {
             #[allow(
                 clippy::arithmetic_side_effects,
                 reason = "n is at least 3"
             )]
-            let n_minus_one: BigUint = n - 1u8;
-            let (s, d) = miller_rabin_decompose(n);
+            let n_minus_one: BigUint = &n - 1u8;
+            let (s, d) = miller_rabin_decompose(&n);
 
             // if n less than u64, simply use 16 small known primes
             let samples = vec![
@@ -93,15 +97,15 @@ mod rabin_miller {
             ];
 
             return samples
-                .iter()
-                .filter(|&&m| biguint!(m) < n_minus_one)
-                .find(|&&a| miller_rabin(&biguint!(a), n, s, &d))
-                .is_none();
+                .into_iter()
+                .filter(|&m| biguint!(m) < n_minus_one)
+                .find(|&a| miller_rabin(&biguint!(a), &n, s, &d))
+                .is_some();
         }
 
         #[allow(clippy::arithmetic_side_effects, reason = "n is at least 3")]
-        let n_minus_one: BigUint = n - 1u8;
-        let (s, d) = miller_rabin_decompose(n);
+        let n_minus_one: BigUint = &n - 1u8;
+        let (s, d) = miller_rabin_decompose(&n);
 
         #[allow(
             clippy::cast_possible_truncation,
@@ -118,16 +122,11 @@ mod rabin_miller {
             reason = "bits should be at least 2"
         )]
         let max = two.pow(bits) - 1u8;
-        let samples: Vec<_> =
-            repeat_with(|| rng.random_biguint_range(&min, &max))
-                .filter(|m| m < &n_minus_one)
-                .take(k)
-                .collect();
 
-        samples
-            .iter()
-            .find(|&a| miller_rabin(a, n, s, &d))
-            .is_none()
+        repeat_with(|| rng.random_biguint_range(&min, &max))
+            .take(k)
+            .find(|a| miller_rabin(a, &n, s, &d))
+            .is_some()
     }
 
     #[cfg(test)]
@@ -140,8 +139,11 @@ mod rabin_miller {
 
             assert!(is_probable_prime(&5u8, 10, &mut rng));
             assert!(!is_probable_prime(&6u8, 10, &mut rng));
+            assert!(!is_probable_prime(&8u8, 10, &mut rng));
+            assert!(!is_probable_prime(&9u8, 10, &mut rng));
+            assert!(!is_probable_prime(&949_284_328_995u64, 10, &mut rng));
             assert!(!is_probable_prime(&949_284_328_996u64, 10, &mut rng));
-            assert!(!is_probable_prime(&252_097_800_623u64, 10, &mut rng));
+            assert!(is_probable_prime(&252_097_800_623u64, 10, &mut rng));
         }
     }
 }
