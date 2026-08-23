@@ -16,7 +16,7 @@ rust-version = "1.96.0"
 license = "MIT"
 repository = "https://github.com/tobiO0310/tobys_lib"
 keywords = ["little", "library"]
-categories = ["library"]
+categories = ["development-tools"]
 
 [workspace.dependencies]
 
