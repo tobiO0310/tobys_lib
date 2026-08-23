@@ -1,0 +1,23 @@
+error: expected `for`
+ --> tests/fail/comprehension/misspellings.rs:5:22
+  |
+5 |     comprehension![x rof x in vec];
+  |                      ^^^
+
+error: expected `in`
+ --> tests/fail/comprehension/misspellings.rs:6:28
+  |
+6 |     comprehension![x for x ni vec];
+  |                            ^^
+
+error: expected `for`
+ --> tests/fail/comprehension/misspellings.rs:7:22
+  |
+7 |     comprehension![x rof x ni vec];
+  |                      ^^^
+
+error: expected `for`
+ --> tests/fail/comprehension/misspellings.rs:8:22
+  |
+8 |     comprehension![x ofr x in vec];
+  |                      ^^^

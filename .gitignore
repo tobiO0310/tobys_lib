@@ -1,0 +1,21 @@
+# IDE
+.vscode
+.zed
+.idea
+*.ini
+
+# SQLX testing
+.env
+.sqlx
+
+# File system
+.DS_Store
+desktop.ini
+
+# Cargo
+.cargo
+## Cargo lock is disabled to prevent extraneous lock file edits in the repo history.
+Cargo.lock
+debug
+target
+rust-ice-*.txt

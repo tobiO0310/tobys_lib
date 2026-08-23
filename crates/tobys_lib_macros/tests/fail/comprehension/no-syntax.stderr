@@ -1,0 +1,7 @@
+error: unexpected end of input, expected an expression
+ --> tests/fail/comprehension/no-syntax.rs:4:5
+  |
+4 |     comprehension![];
+  |     ^^^^^^^^^^^^^^^^
+  |
+  = note: this error originates in the macro `comprehension` (in Nightly builds, run with -Z macro-backtrace for more info)

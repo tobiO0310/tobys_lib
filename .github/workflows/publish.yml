@@ -1,0 +1,49 @@
+name: Publish Crate
+
+permissions:
+    contents: write
+
+on:
+    push:
+        tags:
+            - "v*.*.*"
+
+jobs:
+    build:
+        runs-on: ubuntu-latest
+        environment:
+            name: "publish"
+            
+        steps:
+            - name: Checkout
+              uses: actions/checkout@v6
+
+            - uses: taiki-e/install-action@v2
+              with:
+                  tool: rust,cargo-binstall
+
+            - run: rustup update stable
+            - name: Test
+              run: cargo test --verbose
+
+            - run: cargo binstall cargo-release
+
+            - name: cargo login
+              run: |-
+                  echo "${{ secrets.CRATES_IO_API_TOKEN }}" | cargo login
+
+            - name: Release on GH
+              uses: softprops/action-gh-release@v3
+              with:
+                  generate_release_notes: true
+
+            - name: Cargo release
+              run: |-
+                  cargo release \
+                    publish \
+                    --workspace \
+                    --all-features \
+                    --allow-branch HEAD \
+                    --no-confirm \
+                    --no-verify \
+                    --execute

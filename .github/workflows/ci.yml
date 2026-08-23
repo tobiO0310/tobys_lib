@@ -1,0 +1,54 @@
+name: Cargo Build & Test
+permissions:
+    contents: read
+
+on:
+    pull_request:
+        types:
+            - opened
+            - reopened
+            - synchronize
+            - ready_for_review
+
+jobs:
+    pre_ci:
+        name: Meta Tests # run some tests like rust version control and style check
+        runs-on: ubuntu-latest
+        if: ${{ !github.event.pull_request.draft }}
+        
+        steps:
+            - uses: actions/checkout@v6
+
+            - uses: taiki-e/install-action@v2
+              with:
+                  tool: rust+clippy,rust@nightly+rustfmt,cargo-binstall,cargo-hack
+            - run: rustup default stable
+
+            - run: cargo hack check --rust-version --workspace --all-targets --ignore-private --feature-powerset
+            - run: cargo hack check -r --rust-version --workspace --all-targets --ignore-private --feature-powerset
+              # ^ fail if code cannot be run with rust version specified in Cargo.toml
+            - run: cargo clippy -- -D warnings
+              # ^ fail on warnings by clippy
+            - run: RUSTDOCFLAGS="-D warnings --cfg docsrs" cargo +nightly doc -all-features --no-deps
+              # ^ fail on documentation warnings
+            - run: cargo +nightly fmt --all --check
+              # ^ fail when fmt was not run
+
+    build_and_test:
+        name: Rust project - latest
+        runs-on: ubuntu-latest
+        if: ${{ !github.event.pull_request.draft }}
+        strategy:
+            matrix:
+                toolchain:
+                    - stable
+                    - beta
+                    - nightly
+        steps:
+            - uses: actions/checkout@v6
+            - uses: taiki-e/install-action@v2
+              with:
+                  tool: rust@${{ matrix.toolchain }},cargo-binstall
+
+            - run: cargo build --verbose
+            - run: cargo test --verbose

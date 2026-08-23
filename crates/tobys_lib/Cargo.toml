@@ -1,0 +1,30 @@
+[package]
+name = "tobys-lib"
+description.workspace = true
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+tobys-lib-macros = { workspace = true, optional = true }
+
+[dev-dependencies]
+
+
+[features]
+macros = ["dep:tobys-lib-macros"]
+
+# docs.rs-specific configuration
+[package.metadata.docs.rs]
+# document all features
+all-features = true
+# defines the configuration attribute `docsrs`
+rustdoc-args = ["--cfg", "docsrs"]
+
+[lints]
+workspace = true

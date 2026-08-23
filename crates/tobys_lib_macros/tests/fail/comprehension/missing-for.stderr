@@ -1,0 +1,10 @@
+error[E0423]: expected value, found macro `vec`
+ --> tests/fail/comprehension/missing-for.rs:5:47
+  |
+5 |     comprehension![x for vec in vecs for x in vec];
+  |                                               ^^^ not a value
+  |
+help: a local variable with a similar name exists
+  |
+5 |     comprehension![x for vec in vecs for x in vecs];
+  |                                                  +
