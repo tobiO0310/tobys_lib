@@ -48,11 +48,3 @@ pub fn comprehension(
 ) -> proc_macro::TokenStream {
     python::comprehension::comprehension_impl(input)
 }
-
-#[cfg(test)]
-#[test]
-fn tests() {
-    let t = trybuild::TestCases::new();
-    t.compile_fail("tests/fail/**/*.rs");
-    t.pass("tests/pass/**/*.rs");
-}

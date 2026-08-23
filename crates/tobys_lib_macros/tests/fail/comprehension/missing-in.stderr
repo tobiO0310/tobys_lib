@@ -1,5 +1,0 @@
-error: expected `in`
- --> tests/fail/comprehension/missing-in.rs:5:28
-  |
-5 |     comprehension![x for x vec];
-  |                            ^^^

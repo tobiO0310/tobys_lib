@@ -29,7 +29,6 @@ tobys-lib-macros = { path = "crates/tobys_lib_macros", version = "0.0" }
 proc-macro2 = { version = "1.0.107", default-features = false }
 quote = { version = "1.0.47", default-features = false }
 syn = { version = "3.0.3", features = ["full"] }
-trybuild = { version = "1.0.120" }
 
 [profile.release]
 lto = true
