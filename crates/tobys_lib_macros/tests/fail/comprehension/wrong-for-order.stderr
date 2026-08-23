@@ -1,0 +1,10 @@
+error[E0425]: cannot find value `vector` in this scope
+ --> tests/fail/comprehension/wrong-for-order.rs:5:53
+  |
+5 |     comprehension![x for vector in vectors for x in vector];
+  |                                                     ^^^^^^
+  |
+help: a local variable with a similar name exists
+  |
+5 |     comprehension![x for vector in vectors for x in vectors];
+  |                                                           +

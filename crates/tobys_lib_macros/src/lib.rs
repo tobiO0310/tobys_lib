@@ -51,7 +51,7 @@ pub fn comprehension(
 
 #[cfg(test)]
 #[test]
-fn ui() {
+fn tests() {
     let t = trybuild::TestCases::new();
     t.compile_fail("tests/fail/**/*.rs");
     t.pass("tests/pass/**/*.rs");
