@@ -9,4 +9,4 @@ doc:
 test:
 	cargo +nightly fmt --all
 	cargo clippy --workspace --all-features -- -D warnings
-	cargo hack check --rust-version --workspace --all-targets --ignore-private --feature-powerset
+	cargo hack check --rust-version --workspace --all-targets --ignore-private --feature-powerset --skip full

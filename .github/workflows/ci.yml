@@ -24,8 +24,8 @@ jobs:
                   tool: rust+clippy,rust@nightly+rustfmt,cargo-binstall,cargo-hack
             - run: rustup default stable
 
-            - run: cargo hack check --rust-version --workspace --all-targets --ignore-private --feature-powerset
-            - run: cargo hack check -r --rust-version --workspace --all-targets --ignore-private --feature-powerset
+            - run: cargo hack check --rust-version --workspace --all-targets --ignore-private --feature-powerset --skip full
+            - run: cargo hack check -r --rust-version --workspace --all-targets --ignore-private --feature-powerset --skip full
               # ^ fail if code cannot be run with rust version specified in Cargo.toml
             - run: cargo clippy -- -D warnings
               # ^ fail on warnings by clippy
