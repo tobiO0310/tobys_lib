@@ -20,6 +20,10 @@ categories = ["development-tools"]
 
 [workspace.dependencies]
 
+rand = { version = "0.10.2", default-features = false }
+num-bigint = { version = "0.5.1", default-features = false }
+num-traits = { version = "0.2.19", default-features = false }
+
 tobys-lib-macros = { path = "crates/tobys_lib_macros", version = "0.0" }
 
 proc-macro2 = { version = "1.0.107", default-features = false }

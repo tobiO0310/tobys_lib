@@ -1,7 +1,11 @@
-//! Test
+//! A little library full of weird little functions/structs/macros.
 
 #![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(not(feature = "std"), no_std)]
 #![deny(missing_docs)]
+
+mod alias;
+pub mod numbers;
 
 #[cfg(feature = "macros")]
 #[cfg_attr(docsrs, doc(cfg(feature = "macros")))]
