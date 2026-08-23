@@ -29,7 +29,7 @@ jobs:
               # ^ fail if code cannot be run with rust version specified in Cargo.toml
             - run: cargo clippy -- -D warnings
               # ^ fail on warnings by clippy
-            - run: RUSTDOCFLAGS="-D warnings --cfg docsrs" cargo +nightly doc -all-features --no-deps
+            - run: RUSTDOCFLAGS="-D warnings --cfg docsrs" cargo +nightly doc --all-features --no-deps
               # ^ fail on documentation warnings
             - run: cargo +nightly fmt --all --check
               # ^ fail when fmt was not run
