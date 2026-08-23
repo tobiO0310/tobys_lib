@@ -4,7 +4,7 @@
 #![deny(missing_docs)]
 
 #[cfg(feature = "macros")]
-#[cfg_attr(docsrs, doc(cfg(feature = "mysql")))]
+#[cfg_attr(docsrs, doc(cfg(feature = "macros")))]
 pub mod macros {
     //! A few custom macros that can simply development, see more in [`tobys_lib_macros`].
 
