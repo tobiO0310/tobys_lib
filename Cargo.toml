@@ -20,7 +20,7 @@ categories = ["library"]
 
 [workspace.dependencies]
 
-tobys-lib-macros = { path = "crates/tobys_lib_macros" }
+tobys-lib-macros = { path = "crates/tobys_lib_macros", version = "0.0" }
 
 proc-macro2 = { version = "1.0.107", default-features = false }
 quote = { version = "1.0.47", default-features = false }
