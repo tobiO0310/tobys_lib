@@ -1,39 +1,35 @@
-[workspace]
-resolver = "3"
-members = [
-    "crates/*"
-]
-default-members = [
-    "crates/*"
-]
-exclude = [
-    "tobys_std"
-]
-
-[workspace.package]
-description = "Toby's little library of custom stuff"
+[package]
+name = "tobys-std"
+description = "Toby's standard rust setup"
 version = "0.0.1"
 edition = "2024"
-rust-version = "1.96.0"
+rust-version = "1.98.0"
 
 license = "MIT"
 repository = "https://github.com/tobiO0310/tobys_lib"
-keywords = ["little", "library"]
-categories = ["development-tools"]
 
-[workspace.dependencies]
+[dependencies]
+itertools = { version = "0.15.0" }
+jiff = { version = "0.2.35" }
+rayon = { version = "1.12.0" }
+serde = { version = "1.0.229" }
 
-tobys-lib-macros = { path = "crates/tobys_lib_macros", version = "0.0" }
 
-proc-macro2 = { version = "1.0.107", default-features = false }
-quote = { version = "1.0.47", default-features = false }
-syn = { version = "3.0.3", features = ["full"] }
-trybuild = { version = "1.0.120" }
+[dev-dependencies]
 
 [profile.release]
 lto = true
 
-[workspace.lints.rust]
+[features]
+
+# docs.rs-specific configuration
+[package.metadata.docs.rs]
+# document all features
+all-features = true
+# defines the configuration attribute `docsrs`
+rustdoc-args = ["--cfg", "docsrs"]
+
+[lints.rust]
 elided_lifetimes_in_paths = "warn"
 future_incompatible = { level = "warn", priority = -1 }
 nonstandard_style = { level = "warn", priority = -1 }
@@ -45,13 +41,13 @@ unexpected_cfgs = "warn"
 
 unused_qualifications = "warn"
 
-[workspace.lints.rustdoc]
+[lints.rustdoc]
 all = "warn"
 missing_crate_level_docs = "warn"
 broken_intra_doc_links = "deny"
 
-[workspace.lints.clippy]
-pedantic = "warn"
+[lints.clippy]
+pedantic = { level = "warn", priority = -1 }
 absolute_paths = "warn"
 
 arithmetic_side_effects = "warn"
@@ -65,3 +61,16 @@ tests_outside_test_module = "warn"
 assertions_on_result_states = "warn"
 error_impl_error = "warn"
 or_fun_call = "warn"
+
+# DENY PANICS
+unwrap_used = "deny"
+expect_used = "deny"
+indexing_slicing = "deny"
+unreachable = "deny"
+unimplemented = "deny"
+unchecked_time_subtraction = "deny"
+todo = "deny"
+string_slice = "deny"
+panic_in_result_fn = "deny"
+panic = "deny"
+as_conversions = "deny"
