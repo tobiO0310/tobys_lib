@@ -16,11 +16,12 @@ mod rabin_miller {
     fn miller_rabin_decompose(n: &BigUint) -> (u64, BigUint) {
         assert!(!n.is_zero() && !n.is_one());
 
-        #[allow(clippy::arithmetic_side_effects, reason = "n is at least 2")]
-        let n = n - 1u8; // n is not zero as per assertion
+        #[expect(clippy::arithmetic_side_effects, reason = "n is at least 2")]
+        let n = n - 1u8; // n is at least 2 as per assertion -> n is now at least 1
+        #[expect(clippy::unwrap_used, reason = "n is not zero")]
         let s = n.trailing_zeros().unwrap();
 
-        #[allow(
+        #[expect(
             clippy::arithmetic_side_effects,
             reason = "causes no overflow/underflow"
         )]
@@ -34,7 +35,7 @@ mod rabin_miller {
     ) -> bool {
         assert!(!num.is_zero());
 
-        #[allow(clippy::arithmetic_side_effects, reason = "n is at least 1")]
+        #[expect(clippy::arithmetic_side_effects, reason = "n is at least 1")]
         let n_minus_1 = num - 1u8;
         let one = BigUint::one();
         let two = biguint!(2);
@@ -60,31 +61,31 @@ mod rabin_miller {
     /// You must supply some form of struct that implements [`Rng`],
     /// that is also *uniformly* random.
     ///
-    /// # Panics
+    /// # None
     ///
-    /// Panics if `n` cannot become a [`BigUint`].
+    /// Returns [`None`] if `n` cannot become a [`BigUint`].
     #[cfg(all(feature = "bigint", feature = "rand"))]
     #[cfg_attr(docsrs, doc(cfg(all(feature = "bigint", feature = "rand"))))]
     pub fn is_probable_prime<T: ToBigUint, R: Rng>(
         n: &T,
         k: usize,
         rng: &mut R,
-    ) -> bool {
+    ) -> Option<bool> {
         use crate::alias::{repeat_with, vec};
 
-        let n = n.to_biguint().unwrap();
+        let n = n.to_biguint()?;
         let two = biguint!(2);
 
         if !n.bit(0) && n != two {
-            return false; // even (and not 2)
+            return Some(false); // even (and not 2)
         }
 
         if n <= BigUint::one() {
-            return false;
+            return Some(false);
         } else if n <= biguint!(3) {
-            return true;
+            return Some(true);
         } else if n <= biguint!(0xFFFF_FFFF_FFFF_FFFFu64) {
-            #[allow(
+            #[expect(
                 clippy::arithmetic_side_effects,
                 reason = "n is at least 3"
             )]
@@ -96,37 +97,42 @@ mod rabin_miller {
                 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53,
             ];
 
-            return samples
-                .into_iter()
-                .filter(|&m| biguint!(m) < n_minus_one)
-                .find(|&a| miller_rabin(&biguint!(a), &n, s, &d))
-                .is_some();
+            return Some(
+                samples
+                    .into_iter()
+                    .filter(|&m| biguint!(m) < n_minus_one)
+                    .find(|&a| miller_rabin(&biguint!(a), &n, s, &d))
+                    .is_some(),
+            );
         }
 
-        #[allow(clippy::arithmetic_side_effects, reason = "n is at least 3")]
+        #[expect(clippy::arithmetic_side_effects, reason = "n is at least 3")]
         let n_minus_one: BigUint = &n - 1u8;
         let (s, d) = miller_rabin_decompose(&n);
 
-        #[allow(
+        #[expect(
             clippy::cast_possible_truncation,
+            clippy::as_conversions,
             reason = "bits will never overflow??"
         )]
         let bits = n_minus_one.bits() as u32;
-        #[allow(
+        #[expect(
             clippy::arithmetic_side_effects,
             reason = "bits should be at least 2"
         )]
         let min = two.pow(bits - 1);
-        #[allow(
+        #[expect(
             clippy::arithmetic_side_effects,
             reason = "bits should be at least 2"
         )]
         let max = two.pow(bits) - 1u8;
 
-        repeat_with(|| rng.random_biguint_range(&min, &max))
-            .take(k)
-            .find(|a| miller_rabin(a, &n, s, &d))
-            .is_some()
+        Some(
+            repeat_with(|| rng.random_biguint_range(&min, &max))
+                .take(k)
+                .find(|a| miller_rabin(a, &n, s, &d))
+                .is_some(),
+        )
     }
 
     #[cfg(test)]
@@ -137,13 +143,19 @@ mod rabin_miller {
         fn simple_test() {
             let mut rng = rand::rng();
 
-            assert!(is_probable_prime(&5u8, 10, &mut rng));
-            assert!(!is_probable_prime(&6u8, 10, &mut rng));
-            assert!(!is_probable_prime(&8u8, 10, &mut rng));
-            assert!(!is_probable_prime(&9u8, 10, &mut rng));
-            assert!(!is_probable_prime(&949_284_328_995u64, 10, &mut rng));
-            assert!(!is_probable_prime(&949_284_328_996u64, 10, &mut rng));
-            assert!(is_probable_prime(&252_097_800_623u64, 10, &mut rng));
+            assert!(is_probable_prime(&5u8, 10, &mut rng).unwrap());
+            assert!(!is_probable_prime(&6u8, 10, &mut rng).unwrap());
+            assert!(!is_probable_prime(&8u8, 10, &mut rng).unwrap());
+            assert!(!is_probable_prime(&9u8, 10, &mut rng).unwrap());
+            assert!(
+                !is_probable_prime(&949_284_328_995u64, 10, &mut rng).unwrap()
+            );
+            assert!(
+                !is_probable_prime(&949_284_328_996u64, 10, &mut rng).unwrap()
+            );
+            assert!(
+                is_probable_prime(&252_097_800_623u64, 10, &mut rng).unwrap()
+            );
         }
     }
 }

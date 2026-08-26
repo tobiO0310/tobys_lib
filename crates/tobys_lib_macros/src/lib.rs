@@ -2,9 +2,12 @@
 //!
 //! See each macro for what they do~
 
-//#![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![deny(missing_docs)]
 
+#[cfg(feature = "cron")]
+#[cfg_attr(docsrs, doc(cfg(feature = "cron")))]
+mod cron;
 mod python;
 pub(crate) mod utilities;
 
@@ -47,4 +50,31 @@ pub fn comprehension(
     input: proc_macro::TokenStream,
 ) -> proc_macro::TokenStream {
     python::comprehension::comprehension_impl(input)
+}
+
+/// A macro that checks and makes sure the cron input is correct.
+///
+/// # Examples
+///
+/// 1)
+#[cfg(feature = "cron")]
+#[cfg_attr(docsrs, doc(cfg(feature = "cron")))]
+#[proc_macro]
+pub fn create_cron(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    cron::create_cron_impl(input)
+}
+
+/// A macro for creating multiple Cron Jobs.
+///
+/// It runs compile-time cron schedule verification,
+/// so you don't have to worry about checking at runtime.
+///
+/// # Examples
+///
+/// 1)
+#[cfg(feature = "cron")]
+#[cfg_attr(docsrs, doc(cfg(feature = "cron")))]
+#[proc_macro]
+pub fn create_jobs(input: proc_macro::TokenStream) -> proc_macro::TokenStream {
+    cron::create_jobs_impl(input)
 }

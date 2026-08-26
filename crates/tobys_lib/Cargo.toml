@@ -11,6 +11,7 @@ keywords.workspace = true
 categories.workspace = true
 
 [dependencies]
+tobys-lib-core = { workspace = true }
 tobys-lib-macros = { workspace = true, optional = true }
 
 rand = { workspace = true, optional = true }
@@ -23,19 +24,22 @@ rand = { workspace = true, features = ["thread_rng"] }
 
 [features]
 full = [
-    "std",
+    "bigint",
+    "cron",
     "macros",
     "rand",
-    "bigint"
+    "std",
+    "tobys-lib-core/full",
+    "tobys-lib-macros/full"
 ]
 default = ["std"]
 alloc = ["rand?/alloc"]
 std = ["rand?/std", "num-bigint?/std"]
 
-macros = ["dep:tobys-lib-macros"]
-
-rand = ["dep:rand", "num-bigint?/rand_0_10"]
 bigint = ["dep:num-bigint", "alloc"]
+cron = ["tobys-lib-core/cron", "tobys-lib-macros?/cron"]
+macros = ["dep:tobys-lib-macros"]
+rand = ["dep:rand", "num-bigint?/rand_0_10"]
 
 # docs.rs-specific configuration
 [package.metadata.docs.rs]

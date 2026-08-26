@@ -19,12 +19,14 @@ keywords = ["little", "library"]
 categories = ["development-tools"]
 
 [workspace.dependencies]
+tobys-lib-core = { path = "crates/tobys_lib_core", version = "0.0" }
+tobys-lib-macros = { path = "crates/tobys_lib_macros", version = "0.0" }
 
 rand = { version = "0.10.2", default-features = false }
 num-bigint = { version = "0.5.1", default-features = false }
 num-traits = { version = "0.2.19", default-features = false }
 
-tobys-lib-macros = { path = "crates/tobys_lib_macros", version = "0.0" }
+thiserror = { version = "2.0.20", default-features = false}
 
 proc-macro2 = { version = "1.0.107", default-features = false }
 quote = { version = "1.0.47", default-features = false }
@@ -51,7 +53,7 @@ missing_crate_level_docs = "warn"
 broken_intra_doc_links = "deny"
 
 [workspace.lints.clippy]
-pedantic = "warn"
+pedantic = { level = "warn", priority = -1 }
 absolute_paths = "warn"
 
 arithmetic_side_effects = "warn"
@@ -65,3 +67,16 @@ tests_outside_test_module = "warn"
 assertions_on_result_states = "warn"
 error_impl_error = "warn"
 or_fun_call = "warn"
+
+# DENY PANICS
+unwrap_used = "deny"
+expect_used = "deny"
+indexing_slicing = "deny"
+unreachable = "deny"
+unimplemented = "deny"
+unchecked_time_subtraction = "deny"
+todo = "deny"
+string_slice = "deny"
+panic_in_result_fn = "deny"
+panic = "deny"
+as_conversions = "deny"
