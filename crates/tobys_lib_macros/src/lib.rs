@@ -77,12 +77,12 @@ pub fn comprehension(
 /// # assert_eq!(every_minute, CronTime::new("* * 13 * 5").unwrap())
 /// ```
 ///
-/// 3) Create a cron time that represents every wednesday, saturday, and sunday at 2 am.
+/// 3) Create a cron time that represents every weekday at 2 am.
 /// ```
 /// # use tobys_lib_macros::create_cron_time;
 /// # use tobys_lib::cron::CronTime;
-/// let every_minute = create_cron_time!(0 2 * * */3);
-/// # assert_eq!(every_minute, CronTime::new("0 2 * * */3").unwrap())
+/// let every_minute = create_cron_time!(0 2 * * 1-5);
+/// # assert_eq!(every_minute, CronTime::new("0 2 * * 1-5").unwrap())
 /// ```
 #[cfg(feature = "cron")]
 #[cfg_attr(docsrs, doc(cfg(feature = "cron")))]
@@ -104,15 +104,15 @@ pub fn create_cron_time(
 /// ```
 /// # use tobys_lib_macros::create_cron_jobs;
 /// let jobs = create_cron_jobs!(
-///     0 8 * * *, || {
+///     0 8 * * * || {
 ///         Box::pin(async {
 ///             // do work here
 ///         })
-///     }; 0 12 * * *, || {
+///     }; 0 12 * * * || {
 ///         Box::pin(async {
 ///             // do other work here
 ///         })
-///     }; 0 16 * * *, || {
+///     }; 0 16 * * * || {
 ///         Box::pin(async {
 ///             // do last work here
 ///         })
@@ -126,7 +126,7 @@ pub fn create_cron_time(
 /// ```
 /// # use tobys_lib_macros::create_cron_jobs;
 /// let jobs = create_cron_jobs!(
-///     0 8 1 1 1, || {
+///     0 8 1 1 1 || {
 ///         Box::pin(async {
 ///             // do work here
 ///         })

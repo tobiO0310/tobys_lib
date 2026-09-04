@@ -1,20 +1,17 @@
+#![expect(clippy::tests_outside_test_module)]
+
 use tobys_lib_macros::comprehension;
 
 struct Color(i32, i32, i32);
 
-fn main() {
-    baseline_test();
-    multiple_for_clauses();
-    multiple_if_clauses();
-    pattern_destructuring();
-}
-
+#[test]
 fn baseline_test() {
     let vec = vec![1, 2, 3];
     let res: Vec<_> = comprehension![x for x in &vec].copied().collect();
     assert_eq!(vec, res);
 }
 
+#[test]
 fn multiple_for_clauses() {
     let vectors = vec![vec![1, 2, 3], vec![4, 5, 6]];
     let res: Vec<_> =
@@ -23,6 +20,7 @@ fn multiple_for_clauses() {
     assert_eq!(res, vec![1, 3, 5]);
 }
 
+#[test]
 fn multiple_if_clauses() {
     let vec = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
     let res: Vec<_> =
@@ -30,6 +28,7 @@ fn multiple_if_clauses() {
     assert_eq!(res, vec![1, 5, 7]);
 }
 
+#[test]
 fn pattern_destructuring() {
     let vec = vec![
         Color(255, 255, 255),

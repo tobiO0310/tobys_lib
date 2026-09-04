@@ -2,6 +2,7 @@
 use std::str::FromStr;
 
 use ::core::fmt;
+use itertools::Itertools;
 use jiff::{
     Span,
     civil::{Date, DateTime, Time, datetime, time},
@@ -17,10 +18,9 @@ use crate::alias::Vec;
 /// There are currently implemented 3 different formats, they are;
 /// - `*`: Every unit
 /// - `n`: At `n` unit
-/// - `*/n` Every `n`th unit
-///
-/// It's important to note, that the `*/n` syntax starts with 0 on every unit.
-/// If, as an example, `n = 5`, valid numbers would be; `0, 5, 10, 15, ...`
+/// - `n-m`, `x,y,z`, & `n-m,x,y,a-f`: Range from `n` to `m` or multiple values/ranges.
+/// - `*/n`: Every `n`th unit
+/// - `x/n`: Starting at `x` and then every `n`th unit from there
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive] // new syntax may be added later (no longer breaking change to add)
 pub enum CronSection {
@@ -28,14 +28,14 @@ pub enum CronSection {
     EveryTime,
     /// Represents a single value in this section
     At(u8),
+    /// Represents the array of multiple chosen values.
+    Multiple([bool; 60]),
     /// Represents `*/n` in this section
     ///
-    /// Please remember, that this syntax starts at 0.
-    /// If the unit it represents does not support 0 as valid, like day or month,
-    /// it will still start at 0.
+    /// Please remember, that this syntax starts at the unit's lowest value.
     EveryNth(u8),
-    // TODO; Add x/n syntax (every nth starting at x)
-    // TODO; Add a,b,c,d,... & a-d syntax (using Vec?)
+    /// Represents `x/n` in this section
+    StartingAtXEveryNth(u8, u8),
 }
 
 /// An error returned during parsing of the cron string.
@@ -168,7 +168,19 @@ impl fmt::Display for CronSection {
         match self {
             CronSection::EveryTime => f.write_str("*"),
             CronSection::At(v) => f.write_fmt(format_args!("{v}")),
+            CronSection::Multiple(v) => f.write_fmt(format_args!(
+                "{}",
+                v.iter()
+                    .copied()
+                    .enumerate()
+                    .filter(|(_, v)| *v)
+                    .map(|(i, _)| i)
+                    .join(",")
+            )),
             CronSection::EveryNth(v) => f.write_fmt(format_args!("*/{v}")),
+            Self::StartingAtXEveryNth(x, n) => {
+                f.write_fmt(format_args!("{x}/{n}"))
+            }
         }
     }
 }
@@ -201,9 +213,8 @@ impl CronSection {
     fn new(str: &str) -> Option<Self> {
         match str {
             "*" => Some(CronSection::EveryTime),
-            x if let Ok(y) = x.parse() => Some(CronSection::At(y)),
-            x if x.starts_with("*/") => {
-                let (_, x) = x.split_at(2);
+            str if str.starts_with("*/") => {
+                let (_, x) = str.split_at(2);
                 if let Ok(y) = x.parse()
                     && y != 0
                 {
@@ -213,7 +224,51 @@ impl CronSection {
                     None
                 }
             }
-            _ => None,
+            str if let Some(split) = str.find('/') => {
+                let (x, n) = str.split_at(split);
+                let (_, n) = n.split_at(1);
+                let (x, n) = (x.parse().ok()?, n.parse().ok()?);
+                if n != 0 {
+                    Some(CronSection::StartingAtXEveryNth(x, n))
+                } else {
+                    None
+                }
+            }
+            str if let Ok(y) = str.parse() => Some(CronSection::At(y)),
+            #[expect(clippy::indexing_slicing, clippy::string_slice)]
+            str => {
+                let mut arr = [false; 60];
+                for part in str.split(',') {
+                    if let Some(sp) = part.find('-') {
+                        let (min, max) = part.split_at(sp);
+                        let max = &max[1..];
+
+                        if let Ok(min) = min.parse::<usize>()
+                            && let Ok(max) = max.parse()
+                            && min <= max
+                            && max < 60
+                        {
+                            for item in arr
+                                .iter_mut()
+                                .take(max.saturating_add(1))
+                                .skip(min)
+                            {
+                                *item = true;
+                            }
+                        } else {
+                            return None;
+                        }
+                    } else if let Ok(y) = part.parse::<usize>()
+                        && y < 60
+                    {
+                        arr[y] = true;
+                    } else {
+                        return None;
+                    }
+                }
+
+                Some(CronSection::Multiple(arr))
+            }
         }
     }
 
@@ -227,9 +282,19 @@ impl CronSection {
         debug_assert!(min <= max);
 
         match self {
-            Self::EveryTime => Ok(()),
-            Self::At(x) | Self::EveryNth(x) if min <= x && x <= max => Ok(()),
-            Self::At(x) | Self::EveryNth(x) => Err(x),
+            Self::At(x)
+            | Self::EveryNth(x)
+            | Self::StartingAtXEveryNth(x, _)
+            | Self::StartingAtXEveryNth(_, x)
+                if !(min <= x && x <= max) =>
+            {
+                Err(x)
+            }
+            Self::EveryTime
+            | Self::At(_)
+            | Self::Multiple(_)
+            | Self::EveryNth(_)
+            | Self::StartingAtXEveryNth(_, _) => Ok(()),
         }
     }
     /// Returns `true` if all inner values are within `min` and `max`, inclusive on both sides.
@@ -347,6 +412,61 @@ macro_rules! unwrap_cron {
         section
     }};
 }
+macro_rules! get_valid {
+    ($sec:ident, $max:literal) => {{
+        match $sec {
+            CronSection::EveryTime => [true; $max],
+            CronSection::At(v) => {
+                let mut arr = [false; $max];
+                // v is between 1 and $max, as this is array indexing,
+                // the value must be shifted left once (minus 1)
+                arr[(v as usize).saturating_sub(1)] = true;
+                arr
+            }
+            CronSection::Multiple(v) => {
+                let mut arr = [false; $max];
+                let mut i = 1;
+                while i < 32 {
+                    if v[i] {
+                        // i's can only be between 1 and $max (exactly)
+                        arr[i.saturating_sub(1)] = true;
+                    }
+                    i += 1;
+                }
+
+                arr
+            }
+            CronSection::EveryNth(v) => {
+                let mut arr = [false; $max];
+
+                let v = v as usize;
+                let mut i = 0;
+                while i < $max {
+                    // i starts at 0, which is the defined behavior
+                    // after that, every v-th value is true (until it goes over max)
+                    arr[i] = true;
+                    i = i.saturating_add(v);
+                }
+
+                arr
+            }
+            CronSection::StartingAtXEveryNth(x, n) => {
+                let mut arr = [false; $max];
+
+                let n = n as usize;
+                let mut i = (x as usize).saturating_sub(1);
+                while i < $max {
+                    // i starts at x, which is the defined behavior
+                    // after that, every n-th value is true (until it goes over max)
+                    arr[i] = true;
+                    i = i.saturating_add(n);
+                }
+
+                arr
+            }
+        }
+    }}
+}
 
 impl CronTime {
     #[expect(
@@ -360,59 +480,14 @@ impl CronTime {
     /// First array is the day of month array, where day 1 is indexed at 0.
     /// Second array is the month array, where month 1 (January) is indexed at 0.
     /// Last array is the weekday array, where Sunday (0, Monday = 1) is indexed at 0.
+    #[expect(clippy::arithmetic_side_effects)]
     const fn get_valid_times(
         day_of_month: CronSection,
         month: CronSection,
         day_of_week: CronSection,
     ) -> ([bool; 31], [bool; 12], [bool; 7]) {
-        let valid_days = match day_of_month {
-            CronSection::EveryTime => [true; 31],
-            CronSection::At(v) => {
-                let mut arr = [false; 31];
-                // v is between 1 and 31, as this is array indexing,
-                // the value must be shifted left once (minus 1)
-                arr[(v as usize).saturating_sub(1)] = true;
-                arr
-            }
-            CronSection::EveryNth(v) => {
-                let mut arr = [false; 31];
-
-                let v = v as usize;
-                let mut i = 0;
-                while i < 31 {
-                    // i starts at 0, which is the defined behavior
-                    // after that, every v-th value is true (until it goes over max)
-                    arr[i] = true;
-                    i = i.saturating_add(v);
-                }
-
-                arr
-            }
-        };
-        let valid_months = match month {
-            CronSection::EveryTime => [true; 12],
-            CronSection::At(v) => {
-                let mut arr = [false; 12];
-                // v is between 1 and 12, as this is array indexing,
-                // the value must be shifted left once (minus 1)
-                arr[(v as usize).saturating_sub(1)] = true;
-                arr
-            }
-            CronSection::EveryNth(v) => {
-                let mut arr = [false; 12];
-
-                let v = v as usize;
-                let mut i = 0;
-                while i < 12 {
-                    // i starts at 0, which is the defined behavior
-                    // after that, every v-th value is true (until it goes over max)
-                    arr[i] = true;
-                    i = i.saturating_add(v);
-                }
-
-                arr
-            }
-        };
+        let valid_days = get_valid!(day_of_month, 31);
+        let valid_months = get_valid!(month, 12);
         let valid_week_days = match day_of_week {
             CronSection::EveryTime => [true; 7],
             CronSection::At(v) => {
@@ -422,16 +497,43 @@ impl CronTime {
                 arr[v as usize % 7] = true;
                 arr
             }
+            CronSection::Multiple(v) => {
+                let mut arr = [false; 7];
+                let mut i = 0;
+                while i < 7 {
+                    if v[i] {
+                        // i's can only be between 1 and 31 (exactly)
+                        arr[i] = true;
+                    }
+                    i += 1;
+                }
+
+                arr
+            }
             CronSection::EveryNth(v) => {
                 let mut arr = [false; 7];
 
                 let v = v as usize;
                 let mut i = 0;
-                while i < 7 {
+                while i <= 7 {
                     // i starts at 0, which is the defined behavior
                     // after that, every nth value is true (until it goes over max)
-                    arr[i] = true;
+                    arr[i % 7] = true;
                     i = i.saturating_add(v);
+                }
+
+                arr
+            }
+            CronSection::StartingAtXEveryNth(x, n) => {
+                let mut arr = [false; 7];
+
+                let n = n as usize;
+                let mut i = x as usize;
+                while i <= 7 {
+                    // i starts at x, which is the defined behavior
+                    // after that, every n-th value is true (until it goes over max)
+                    arr[i % 7] = true;
+                    i = i.saturating_add(n);
                 }
 
                 arr
@@ -637,12 +739,23 @@ impl CronTime {
         #[expect(
             clippy::as_conversions,
             clippy::cast_possible_wrap,
-            clippy::cast_sign_loss
+            clippy::cast_sign_loss,
+            clippy::arithmetic_side_effects,
+            clippy::indexing_slicing,
+            reason = "all clippy lints are 100% guaranteed to NOT happen"
         )]
         let hour = match self.hour {
             CronSection::EveryTime => true,
             CronSection::At(v) => time.hour() == v as i8,
+            CronSection::Multiple(v) => v[time.hour() as usize],
             CronSection::EveryNth(v) => (time.hour() as u8).is_multiple_of(v),
+            CronSection::StartingAtXEveryNth(x, n) => {
+                let h = time.hour() as u8;
+                // h must be bigger than x (starting at)
+                // and if so, h - x >= 0, therefore h - n will not wrap
+                // and every nth starting at x is a multiple of n after subtracting x
+                h >= x && (h - x).is_multiple_of(n)
+            }
         };
         if !hour {
             return false;
@@ -651,12 +764,23 @@ impl CronTime {
         #[expect(
             clippy::as_conversions,
             clippy::cast_possible_wrap,
-            clippy::cast_sign_loss
+            clippy::cast_sign_loss,
+            clippy::arithmetic_side_effects,
+            clippy::indexing_slicing,
+            reason = "all clippy lints are 100% guaranteed to NOT happen"
         )]
         match self.minute {
             CronSection::EveryTime => true,
             CronSection::At(v) => time.minute() == v as i8,
+            CronSection::Multiple(v) => v[time.minute() as usize],
             CronSection::EveryNth(v) => (time.minute() as u8).is_multiple_of(v),
+            CronSection::StartingAtXEveryNth(x, n) => {
+                let m = time.minute() as u8;
+                // h must be bigger than x (starting at)
+                // and if so, h - x >= 0, therefore h - n will not wrap
+                // and every nth starting at x is a multiple of n after subtracting x
+                m >= x && (m - x).is_multiple_of(n)
+            }
         }
     }
     fn next_time<const ALLOW_DAY_WRAP: bool>(
@@ -671,12 +795,22 @@ impl CronTime {
             clippy::arithmetic_side_effects,
             clippy::as_conversions,
             clippy::expect_used,
+            clippy::indexing_slicing,
             reason = "all clippy lints are 100% guaranteed to NOT happen"
         )]
         let next_minute = match self.minute {
             // get the next minute and wrap around at 60
             CronSection::EveryTime => (curr.minute() + 1) % 60,
             CronSection::At(v) => v.try_into().expect("v is between 0 and 59"),
+            CronSection::Multiple(v) => {
+                let mut next = (curr.minute() + 1) as usize;
+
+                while !v[next] {
+                    next = (next + 1) % 60;
+                }
+
+                next as i8
+            }
             CronSection::EveryNth(v) => {
                 // get the next valid minute, using;
                 // (ceil(current minute / v) * v) % 60
@@ -686,6 +820,23 @@ impl CronTime {
                 // % 60 makes sure the number wraps at 60 (is in 0..=59)
 
                 ((curr.minute() as u32).div_ceil(v.into()) as i8 * v as i8) % 60
+            }
+            CronSection::StartingAtXEveryNth(x, n) => {
+                let m = curr.minute() as u32;
+                let x: u32 = x.into();
+                let n: u32 = n.into();
+
+                // if h < x, the next must be x (starting at)
+                if m < x {
+                    x as i8
+                } else {
+                    // else get next every nth number using the same logic as EveryNth branch,
+                    // however subtracting x first to get new starting position (and then re-adding after)
+                    let val = ((m - x).div_ceil(n) * n) + x;
+                    // if val >= 60, wrap and set to starting at val (x)
+                    // else val is within range
+                    (if val >= 60 { x } else { val }) as i8
+                }
             }
         };
 
@@ -699,6 +850,7 @@ impl CronTime {
             clippy::arithmetic_side_effects,
             clippy::as_conversions,
             clippy::expect_used,
+            clippy::indexing_slicing,
             reason = "all clippy lints are 100% guaranteed to NOT happen"
         )]
         let next_hour = match self.hour {
@@ -712,6 +864,15 @@ impl CronTime {
                 }
             }
             CronSection::At(v) => v.try_into().expect("v is between 0 and 23"),
+            CronSection::Multiple(v) => {
+                let mut next = (curr.hour() + 1) as usize;
+
+                while !v[next] {
+                    next = (next + 1) % 24;
+                }
+
+                next as i8
+            }
             CronSection::EveryNth(v) => {
                 // get the next valid hour, using;
                 // (ceil(current hour / v) * v) % 24
@@ -720,6 +881,23 @@ impl CronTime {
                 //
                 // % 24 makes sure the number wraps at 24 (is in 0..=23)
                 ((curr.hour() as u32).div_ceil(v.into()) as i8 * v as i8) % 24
+            }
+            CronSection::StartingAtXEveryNth(x, n) => {
+                let h = curr.hour() as u32;
+                let x: u32 = x.into();
+                let n: u32 = n.into();
+
+                // if h < x, the next must be x (starting at)
+                if h < x {
+                    x as i8
+                } else {
+                    // else get next every nth number using the same logic as EveryNth branch,
+                    // however subtracting x first to get new starting position (and then re-adding after)
+                    let val = ((h - x).div_ceil(n) * n) + x;
+                    // if val >= 24, wrap and set to starting at val (x)
+                    // else val is within range
+                    (if val >= 24 { x } else { val }) as i8
+                }
             }
         };
 
@@ -884,41 +1062,63 @@ mod tests {
     #[test]
     #[expect(unused_must_use)]
     fn valid_numbers_parse_test() {
-        for i in 0..=59 {
-            CronTime::new(&format!("{i} * * * *")).unwrap();
+        CronTime::new("0 * * * *").unwrap();
+        for i in 1..=59 {
+            CronTime::new(&format!("*/{i} * * * *")).unwrap();
+            CronTime::new(&format!("{i}/{i} * * * *")).unwrap();
         }
         for i in 60..=u8::MAX {
             CronTime::new(&format!("{i} * * * *")).unwrap_err();
+            CronTime::new(&format!("*/{i} * * * *")).unwrap_err();
+            CronTime::new(&format!("{i}/{i} * * * *")).unwrap_err();
         }
 
-        for i in 0..=23 {
+        CronTime::new("* 0 * * *").unwrap();
+        for i in 1..=23 {
             CronTime::new(&format!("* {i} * * *")).unwrap();
+            CronTime::new(&format!("* */{i} * * *")).unwrap();
+            CronTime::new(&format!("* {i}/{i} * * *")).unwrap();
         }
         for i in 24..=u8::MAX {
             CronTime::new(&format!("* {i} * * *")).unwrap_err();
+            CronTime::new(&format!("* */{i} * * *")).unwrap_err();
+            CronTime::new(&format!("* {i}/{i} * * *")).unwrap_err();
         }
 
         for i in 1..=31 {
             CronTime::new(&format!("* * {i} * *")).unwrap();
+            CronTime::new(&format!("* * */{i} * *")).unwrap();
+            CronTime::new(&format!("* * {i}/{i} * *")).unwrap();
         }
         CronTime::new("* * 0 * *").unwrap_err();
         for i in 32..=u8::MAX {
             CronTime::new(&format!("* * {i} * *")).unwrap_err();
+            CronTime::new(&format!("* * */{i} * *")).unwrap_err();
+            CronTime::new(&format!("* * {i}/{i} * *")).unwrap_err();
         }
 
         for i in 1..=12 {
             CronTime::new(&format!("* * * {i} *")).unwrap();
+            CronTime::new(&format!("* * * */{i} *")).unwrap();
+            CronTime::new(&format!("* * * {i}/{i} *")).unwrap();
         }
         CronTime::new("* * * 0 *").unwrap_err();
         for i in 13..=u8::MAX {
             CronTime::new(&format!("* * * {i} *")).unwrap_err();
+            CronTime::new(&format!("* * * */{i} *")).unwrap_err();
+            CronTime::new(&format!("* * * {i}/{i} *")).unwrap_err();
         }
 
-        for i in 0..=7 {
+        CronTime::new("* * * * 0").unwrap();
+        for i in 1..=7 {
             CronTime::new(&format!("* * * * {i}")).unwrap();
+            CronTime::new(&format!("* * * * */{i}")).unwrap();
+            CronTime::new(&format!("* * * * {i}/{i}")).unwrap();
         }
         for i in 8..=u8::MAX {
             CronTime::new(&format!("* * * * {i}")).unwrap_err();
+            CronTime::new(&format!("* * * * */{i}")).unwrap_err();
+            CronTime::new(&format!("* * * * {i}/{i}")).unwrap_err();
         }
     }
 
@@ -947,7 +1147,7 @@ mod tests {
             CronTime::new("0 */21 */7 */3 *")
                 .unwrap()
                 .get_next_time(BASE_LINE),
-            DateTime::constant(2026, 9, 7, 0, 0, 0, 0)
+            DateTime::constant(2026, 10, 1, 0, 0, 0, 0)
         );
 
         // next sunday
@@ -972,6 +1172,14 @@ mod tests {
                 .unwrap()
                 .get_next_time(BASE_LINE),
             DateTime::constant(2026, 11, 13, 12, 0, 0, 0)
+        );
+
+        // next day divisible by 10 (10, 20, 30)
+        assert_eq!(
+            CronTime::new("0 12 10/10 * *")
+                .unwrap()
+                .get_next_time(BASE_LINE),
+            DateTime::constant(2026, 9, 10, 12, 0, 0, 0)
         );
 
         // More tests could be argued that could be added,

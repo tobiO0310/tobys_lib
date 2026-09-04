@@ -12,7 +12,7 @@ on:
 
 env:
     CARGO_HACK_ARGUMENTS: --verbose --rust-version --workspace --all-targets \
-        --ignore-private --feature-powerset --skip full,default \
+        --feature-powerset --skip full,default \
         --mutually-exclusive-features std,alloc \
         --mutually-exclusive-features bigint,alloc
 
@@ -57,6 +57,6 @@ jobs:
 
             - run: cargo build --verbose
             - run:
-                  cargo hack test ${{ env.CARGO_HACK_ARGUMENTS }} --no-dev-deps
+                  cargo hack test ${{ env.CARGO_HACK_ARGUMENTS }} --ignore-private --no-dev-deps
                   # std will always override alloc
                   # bigint automatically enables alloc

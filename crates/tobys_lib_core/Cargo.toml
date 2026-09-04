@@ -11,7 +11,8 @@ keywords.workspace = true
 categories.workspace = true
 
 [dependencies]
-jiff = { version = "0.2.35", default-features = false, optional = true }
+itertools = { workspace = true }
+jiff = { workspace = true, optional = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]
@@ -22,8 +23,8 @@ tobys-lib = { workspace = true, features = ["full"] }
 [features]
 full = ["cron", "std"]
 default = ["std"]
-alloc = ["jiff?/alloc"]
-std = ["thiserror/std", "jiff?/std"]
+alloc = ["jiff?/alloc", "itertools/use_alloc"]
+std = ["thiserror/std", "jiff?/std", "itertools/use_std"]
 
 cron = ["dep:jiff"]
 
