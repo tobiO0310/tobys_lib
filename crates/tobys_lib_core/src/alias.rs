@@ -7,11 +7,15 @@
 extern crate alloc;
 
 #[cfg(all(feature = "alloc", not(feature = "std")))]
-pub use alloc::vec;
-#[cfg(all(feature = "alloc", not(feature = "std")))]
-pub use alloc::vec::Vec;
+pub use alloc::{
+    boxed::Box,
+    format,
+    vec::{self, Vec},
+};
 
 #[cfg(feature = "std")]
-pub use ::std::vec;
-#[cfg(feature = "std")]
-pub use ::std::vec::Vec;
+pub use ::std::{
+    boxed::Box,
+    format,
+    vec::{self, Vec},
+};

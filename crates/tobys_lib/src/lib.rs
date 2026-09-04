@@ -25,12 +25,12 @@ pub mod cron {
     //! ## Macro
     //!
     //! If `macros` feature is enabled, two macros are available;
-    //! - [`create_cron`] macro is available to test cron time at compile-time.
-    //! - [`create_jobs`] macro is available to create multiple jobs at the same time.
+    //! - [`create_cron_time`] macro is available to test cron time at compile-time.
+    //! - [`create_cron_jobs`] macro is available to create multiple jobs at the same time.
     //!
     //!
-    //! [`create_cron`]: crate::create_cron
-    //! [`crate_jobs`]: crate::crate_jobs
+    //! [`create_cron_time`]: crate::create_cron_time
+    //! [`create_cron_jobs`]: crate::create_cron_jobs
     #[doc(inline)]
     pub use tobys_lib_core::cron::*;
 }

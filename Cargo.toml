@@ -19,14 +19,18 @@ keywords = ["little", "library"]
 categories = ["development-tools"]
 
 [workspace.dependencies]
-tobys-lib-core = { path = "crates/tobys_lib_core", version = "0.0" }
-tobys-lib-macros = { path = "crates/tobys_lib_macros", version = "0.0" }
+tobys-lib = { path = "crates/tobys_lib", version = "0.0", default-features = false }
+tobys-lib-core = { path = "crates/tobys_lib_core", version = "0.0", default-features = false }
+tobys-lib-macros = { path = "crates/tobys_lib_macros", version = "0.0", default-features = false }
 
 rand = { version = "0.10.2", default-features = false }
+futures = { version = "0.3.34", default-features = false }
 num-bigint = { version = "0.5.1", default-features = false }
 num-traits = { version = "0.2.19", default-features = false }
+rayon = { version = "1.12.0", default-features = false }
+tokio = { version = "1.53.1", default-features = false }
 
-thiserror = { version = "2.0.20", default-features = false}
+thiserror = { version = "2.0.20", default-features = false }
 
 proc-macro2 = { version = "1.0.107", default-features = false }
 quote = { version = "1.0.47", default-features = false }
@@ -40,6 +44,8 @@ elided_lifetimes_in_paths = "warn"
 future_incompatible = { level = "warn", priority = -1 }
 nonstandard_style = { level = "warn", priority = -1 }
 rust_2018_idioms = { level = "warn", priority = -1 }
+nonstandard_style = { level = "warn", priority = -1 }
+unused = { level = "warn", priority = -1 }
 rust_2021_prelude_collisions = "warn"
 semicolon_in_expressions_from_macros = "warn"
 trivial_numeric_casts = "warn"

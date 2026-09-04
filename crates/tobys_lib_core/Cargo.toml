@@ -15,6 +15,9 @@ jiff = { version = "0.2.35", default-features = false, optional = true }
 thiserror = { workspace = true }
 
 [dev-dependencies]
+futures = { workspace = true, features = ["std"] }
+tokio = { workspace = true, features = ["full"] }
+tobys-lib = { workspace = true, features = ["full"] }
 
 [features]
 full = ["cron", "std"]

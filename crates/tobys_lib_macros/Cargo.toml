@@ -21,6 +21,7 @@ syn = { workspace = true }
 quote = { workspace = true }
 
 [dev-dependencies]
+tobys-lib = { workspace = true, features = ["full"] }
 
 [features]
 full = [

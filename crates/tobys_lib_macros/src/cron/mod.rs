@@ -44,11 +44,11 @@ impl<const MIN: u8, const MAX: u8> ToTokens for CronSection<MIN, MAX> {
     fn to_tokens(&self, tokens: &mut proc_macro2::TokenStream) {
         tokens.extend(match self {
             Self::EveryTime => {
-                quote! { tobys_lib_core::cron::CronSection::EveryTime }
+                quote! { tobys_lib::cron::CronSection::EveryTime }
             }
-            Self::At(v) => quote! { tobys_lib_core::cron::CronSection::At(#v) },
+            Self::At(v) => quote! { tobys_lib::cron::CronSection::At(#v) },
             Self::EveryNth(v) => {
-                quote! { tobys_lib_core::cron::CronSection::EveryNth(#v) }
+                quote! { tobys_lib::cron::CronSection::EveryNth(#v) }
             }
         });
     }
@@ -90,7 +90,7 @@ impl ToTokens for CronSyntax {
     }
 }
 
-pub(crate) fn create_cron_impl(input: TokenStream) -> TokenStream {
+pub(crate) fn create_time_impl(input: TokenStream) -> TokenStream {
     let c = parse_macro_input!(input as CronSyntax);
     quote! { #c }.into()
 }
