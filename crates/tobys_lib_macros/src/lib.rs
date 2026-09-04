@@ -53,10 +53,10 @@ pub fn comprehension(
 }
 
 /// A macro that checks and makes sure the cron input is correct.
-/// 
+///
 /// This macro will move runtime cron string compilation to compile-time.
 /// The compiler will reject any invalid cron jobs, so you are guaranteed your cron string is correct.
-/// 
+///
 /// The format for this macro is a standard cron job, but not as a string literal.
 ///
 /// # Examples
@@ -68,7 +68,7 @@ pub fn comprehension(
 /// let every_minute = create_cron_time!(* * * * *);
 /// # assert_eq!(every_minute, CronTime::new("* * * * *").unwrap())
 /// ```
-/// 
+///
 /// 2) Create a cron time that represents every friday the 13th
 /// ```
 /// # use tobys_lib_macros::create_cron_time;
@@ -76,7 +76,7 @@ pub fn comprehension(
 /// let every_minute = create_cron_time!(* * 13 * 5);
 /// # assert_eq!(every_minute, CronTime::new("* * 13 * 5").unwrap())
 /// ```
-/// 
+///
 /// 3) Create a cron time that represents every wednesday, saturday, and sunday at 2 am.
 /// ```
 /// # use tobys_lib_macros::create_cron_time;
@@ -120,7 +120,7 @@ pub fn create_cron_time(
 /// );
 /// # assert_eq!(jobs.len(), 3);
 /// ```
-/// 
+///
 /// Create a single job, that fires once every blue moon;
 /// every january 1st that is a monday at 8:00 (8 am).
 /// ```
