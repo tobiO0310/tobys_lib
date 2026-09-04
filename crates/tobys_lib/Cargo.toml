@@ -13,29 +13,31 @@ categories.workspace = true
 [dependencies]
 tobys-lib-macros = { workspace = true, optional = true }
 
-rand = { workspace = true, optional = true }
 num-bigint = { workspace = true, optional = true }
 num-traits = { workspace = true }
+rand = { workspace = true, optional = true }
+rayon = { workspace = true, optional = true }
 
 [dev-dependencies]
 
-rand = { workspace = true, features = ["thread_rng"] }
+rand = { workspace = true, features = ["default"] }
 
 [features]
 full = [
-    "std",
+    "bigint",
     "macros",
     "rand",
-    "bigint"
+    "rayon",
+    "std"
 ]
 default = ["std"]
 alloc = ["rand?/alloc"]
 std = ["rand?/std", "num-bigint?/std"]
 
-macros = ["dep:tobys-lib-macros"]
-
-rand = ["dep:rand", "num-bigint?/rand_0_10"]
 bigint = ["dep:num-bigint", "alloc"]
+macros = ["dep:tobys-lib-macros"]
+rand = ["dep:rand", "num-bigint?/rand_0_10"]
+rayon = ["dep:rayon", "std"]
 
 # docs.rs-specific configuration
 [package.metadata.docs.rs]

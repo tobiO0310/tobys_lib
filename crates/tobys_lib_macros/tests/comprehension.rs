@@ -37,7 +37,9 @@ mod tests {
     #[test]
     fn multiple_if_clauses() {
         let vec = vec![1, 2, 3, 4, 5, 6, 7, 8, 9, 10];
-        let res: Vec<_> = comprehension![x for x in vec if x & 1 != 0 && x % 3 != 0].collect();
+        let res: Vec<_> =
+            comprehension![x for x in vec if x & 1 != 0 && x % 3 != 0]
+                .collect();
         assert_eq!(res, vec![1, 5, 7]);
     }
 }

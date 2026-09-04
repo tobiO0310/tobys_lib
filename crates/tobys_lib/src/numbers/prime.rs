@@ -5,6 +5,8 @@ mod rabin_miller {
     use num_bigint::{BigRng010, BigUint, ToBigUint};
     use num_traits::{One, Zero};
     use rand::Rng;
+    #[cfg(feature = "rayon")]
+    use rayon::iter::{ParallelBridge, ParallelIterator};
 
     macro_rules! biguint {
         ($e:expr) => {
@@ -12,7 +14,6 @@ mod rabin_miller {
         };
     }
 
-    #[cfg(all(feature = "bigint", feature = "rand"))]
     fn miller_rabin_decompose(n: &BigUint) -> (u64, BigUint) {
         assert!(!n.is_zero() && !n.is_one());
 
@@ -60,25 +61,25 @@ mod rabin_miller {
     /// You must supply some form of struct that implements [`Rng`],
     /// that is also *uniformly* random.
     ///
-    /// # Panics
+    /// [`rayon`] parallelization can be enabled with the `rayon` feature flag.
     ///
-    /// Panics if `n` cannot become a [`BigUint`].
-    #[cfg(all(feature = "bigint", feature = "rand"))]
-    #[cfg_attr(docsrs, doc(cfg(all(feature = "bigint", feature = "rand"))))]
-    pub fn is_probable_prime<T: ToBigUint, R: Rng>(
+    /// # None
+    ///
+    /// Returns [`None`] if `n` cannot become a [`BigUint`].
+    pub fn is_probable_prime<T: ToBigUint, R: Rng + Send + Sync>(
         n: &T,
         k: usize,
-        rng: &mut R,
-    ) -> bool {
-        use crate::alias::{Vec, repeat_with, vec};
+        mut rng: R,
+    ) -> Option<bool> {
+        use crate::alias::{repeat_with, vec};
 
-        let n = &n.to_biguint().unwrap();
+        let n = &n.to_biguint()?;
         let two = &biguint!(2);
 
         if n <= &BigUint::one() {
-            return false;
+            return Some(false);
         } else if n <= &biguint!(3) {
-            return true;
+            return Some(true);
         } else if n <= &biguint!(0xFFFF_FFFF_FFFF_FFFFu64) {
             #[allow(
                 clippy::arithmetic_side_effects,
@@ -92,11 +93,15 @@ mod rabin_miller {
                 2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37, 41, 43, 47, 53,
             ];
 
-            return samples
-                .iter()
-                .filter(|&&m| biguint!(m) < n_minus_one)
-                .find(|&&a| miller_rabin(&biguint!(a), n, s, &d))
-                .is_none();
+            // rayon is not used here, as it is unnecessary (amount of numbers are limited to 16)
+
+            return Some(
+                samples
+                    .into_iter()
+                    .filter(|&m| biguint!(m) < n_minus_one)
+                    .find(|&a| miller_rabin(&biguint!(a), n, s, &d))
+                    .is_some(),
+            );
         }
 
         #[allow(clippy::arithmetic_side_effects, reason = "n is at least 3")]
@@ -118,30 +123,48 @@ mod rabin_miller {
             reason = "bits should be at least 2"
         )]
         let max = two.pow(bits) - 1u8;
-        let samples: Vec<_> =
+
+        #[cfg(not(feature = "rayon"))]
+        return Some(
             repeat_with(|| rng.random_biguint_range(&min, &max))
                 .filter(|m| m < &n_minus_one)
                 .take(k)
-                .collect();
+                .find(|a| miller_rabin(a, &n, s, &d))
+                .is_some(),
+        );
 
-        samples
-            .iter()
-            .find(|&a| miller_rabin(a, n, s, &d))
-            .is_none()
+        #[cfg(feature = "rayon")]
+        Some(
+            repeat_with(|| rng.random_biguint_range(&min, &max))
+                .take(k)
+                .par_bridge()
+                .find_any(|a| miller_rabin(a, n, s, &d))
+                .is_some(),
+        )
     }
 
     #[cfg(test)]
     mod tests {
+        use rand::rngs::StdRng;
+
         use super::*;
 
         #[test]
         fn simple_test() {
-            let mut rng = rand::rng();
-
-            assert!(is_probable_prime(&5u8, 10, &mut rng));
-            assert!(!is_probable_prime(&6u8, 10, &mut rng));
-            assert!(!is_probable_prime(&949_284_328_996u64, 10, &mut rng));
-            assert!(!is_probable_prime(&252_097_800_623u64, 10, &mut rng));
+            let mut rng: StdRng = rand::make_rng();
+            assert!(is_probable_prime(&5u8, 10, &mut rng).unwrap());
+            assert!(!is_probable_prime(&6u8, 10, &mut rng).unwrap());
+            assert!(!is_probable_prime(&8u8, 10, &mut rng).unwrap());
+            assert!(!is_probable_prime(&9u8, 10, &mut rng).unwrap());
+            assert!(
+                !is_probable_prime(&949_284_328_995u64, 10, &mut rng).unwrap()
+            );
+            assert!(
+                !is_probable_prime(&949_284_328_996u64, 10, &mut rng).unwrap()
+            );
+            assert!(
+                is_probable_prime(&252_097_800_623u64, 10, &mut rng).unwrap()
+            );
         }
     }
 }
