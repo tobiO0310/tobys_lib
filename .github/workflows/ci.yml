@@ -11,10 +11,13 @@ on:
             - ready_for_review
 
 env:
-    CARGO_HACK_ARGUMENTS: --verbose --rust-version --workspace --all-targets \
-        --feature-powerset --skip full,default \
-        --mutually-exclusive-features std,alloc \
+    CARGO_HACK_ARGUMENTS: >-
+        --verbose --rust-version --workspace --all-targets
+        --ignore-private --feature-powerset --skip full,default
+        --mutually-exclusive-features std,alloc
         --mutually-exclusive-features bigint,alloc
+    # std will always override alloc
+    # bigint automatically enables alloc
 
 jobs:
     pre_ci:
@@ -30,11 +33,11 @@ jobs:
                   tool: rust+clippy,rust@nightly+rustfmt,cargo-binstall,cargo-hack
             - run: rustup default stable
 
-            - run: cargo hack check ${{ env.CARGO_HACK_ARGUMENTS }}
+            - run: cargo hack check ${{ env.CARGO_HACK_ARGUMENTS }} --no-dev-deps
               # ^ fail if code cannot be compiled with rust version specified in Cargo.toml in all feature-combinations
             - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
               # ^ fail on warnings by clippy
-            - run: RUSTDOCFLAGS="-D warnings --cfg docsrs" cargo +nightly doc --all-features --no-deps
+            - run: RUSTDOCFLAGS="-D warnings --cfg docsrs" cargo +nightly doc --all-features
               # ^ fail on documentation warnings
             - run: cargo +nightly fmt --all --check
               # ^ fail when fmt was not run
@@ -57,6 +60,4 @@ jobs:
 
             - run: cargo build --verbose
             - run:
-                  cargo hack test ${{ env.CARGO_HACK_ARGUMENTS }} --ignore-private --no-dev-deps
-                  # std will always override alloc
-                  # bigint automatically enables alloc
+                  cargo hack test ${{ env.CARGO_HACK_ARGUMENTS }}
