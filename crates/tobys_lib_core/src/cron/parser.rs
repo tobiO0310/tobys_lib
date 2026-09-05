@@ -140,6 +140,12 @@ pub enum CronParsingError {
 /// # .is_ok());
 /// ```
 ///
+/// Parse a cron string at compile time instead of runtime.
+/// ```rust
+/// # use tobys_lib::create_cron_time;
+/// let time = create_cron_time!(* * * * *);
+/// ```
+///
 /// # Implementation notes
 ///
 /// The numbers and their corresponding weekday is as follows;

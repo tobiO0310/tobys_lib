@@ -401,8 +401,6 @@ impl FromIterator<Job> for Scheduler<Uninitialized> {
 #[cfg(feature = "std")] // will require std to actually do some async work here lol
 #[cfg(test)]
 mod tests {
-    use std::thread::sleep;
-
     use futures::future::join_all;
     use tokio::runtime::Runtime;
 
@@ -421,18 +419,17 @@ mod tests {
         }));
 
         let scheduler = scheduler.init();
-        let now = Zoned::now();
+        let mut now = Zoned::now().datetime();
         let duration = cron_time
-            .get_next_time(now.clone())
-            .duration_since(now.datetime())
+            .get_next_time(now)
+            .duration_since(now)
             .unsigned_abs();
-        println!("Sleeping for {} seconds", duration.as_secs());
-        sleep(duration); // wait till next minute
+        now += duration; // move to next minute
         rt.block_on(async move {
             let mut scheduler = scheduler;
 
             // scheduler is initialized, error won't happen
-            let jobs = scheduler.manual_tick();
+            let jobs = scheduler.__manual_tick(now);
             assert_eq!(jobs.len(), 1); // the added println job must run now
             join_all(jobs).await;
         });
@@ -481,15 +478,12 @@ mod tests {
         rt.block_on(async move {
             let mut scheduler = scheduler;
 
-            let now = Zoned::now();
-            let duration = every
-                .get_next_time(now.clone())
-                .duration_since(now.datetime())
-                .unsigned_abs();
-            println!("1: Sleeping for {} seconds", duration.as_secs());
-            sleep(duration); // wait till next minute
+            let mut now = Zoned::now().datetime();
+            let duration =
+                every.get_next_time(now).duration_since(now).unsigned_abs();
+            now += duration; // move to next minute
 
-            let jobs = scheduler.manual_tick();
+            let jobs = scheduler.__manual_tick(now);
             assert_eq!(jobs.len(), 2); // the * and +1 jobs should be here now
             join_all(jobs).await;
             assert!(
@@ -499,15 +493,11 @@ mod tests {
                     .is_sorted_by(|a, b| a.1 <= b.1)
             );
 
-            let now = Zoned::now();
-            let duration = every
-                .get_next_time(now.clone())
-                .duration_since(now.datetime())
-                .unsigned_abs();
-            println!("2: Sleeping for {} seconds", duration.as_secs());
-            sleep(duration); // wait till next minute
+            let duration =
+                every.get_next_time(now).duration_since(now).unsigned_abs();
+            now += duration; // move to next minute
 
-            let jobs = scheduler.manual_tick();
+            let jobs = scheduler.__manual_tick(now);
             assert_eq!(jobs.len(), 1); // the * job should be here now
             join_all(jobs).await;
             assert!(
@@ -517,15 +507,11 @@ mod tests {
                     .is_sorted_by(|a, b| a.1 <= b.1)
             );
 
-            let now = Zoned::now();
-            let duration = every
-                .get_next_time(now.clone())
-                .duration_since(now.datetime())
-                .unsigned_abs();
-            println!("3: Sleeping for {} seconds", duration.as_secs());
-            sleep(duration); // wait till next minute
+            let duration =
+                every.get_next_time(now).duration_since(now).unsigned_abs();
+            now += duration; // move to next minute
 
-            let jobs = scheduler.manual_tick();
+            let jobs = scheduler.__manual_tick(now);
             assert_eq!(jobs.len(), 2); // the * and +3 jobs should be here now
             join_all(jobs).await;
             assert!(

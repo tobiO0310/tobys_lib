@@ -25,7 +25,17 @@ pub(super) type AsyncFunction =
 /// Create a simple cron job that run all the time
 /// ```rust
 /// # use tobys_lib_core::cron::{CronTime, Job};
-/// let v = Job::new(CronTime::new("* * * * *").expect("cron string is valid!"), || {
+/// let job = Job::new(CronTime::new("* * * * *").expect("cron string is valid!"), || {
+///     // prepare the async work..
+///     Box::pin(async {
+///         // do some async work ...
+///     })
+/// });
+/// ```
+/// Create a job using the macro
+/// ```rust
+/// # use tobys_lib::create_cron_jobs;
+/// let job = create_cron_jobs!(* * * * * || {
 ///     // prepare the async work..
 ///     Box::pin(async {
 ///         // do some async work ...
