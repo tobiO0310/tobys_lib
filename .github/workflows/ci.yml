@@ -33,7 +33,7 @@ jobs:
                   tool: rust+clippy,rust@nightly+rustfmt,cargo-binstall,cargo-hack
             - run: rustup default stable
 
-            - run: cargo hack check ${{ env.CARGO_HACK_ARGUMENTS }} --no-dev-deps
+            - run: cargo hack check ${{ env.CARGO_HACK_ARGUMENTS }}
               # ^ fail if code cannot be compiled with rust version specified in Cargo.toml in all feature-combinations
             - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
               # ^ fail on warnings by clippy
