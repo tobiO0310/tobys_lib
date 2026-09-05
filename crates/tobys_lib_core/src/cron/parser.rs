@@ -21,6 +21,11 @@ use crate::alias::Vec;
 /// - `n-m`, `x,y,z`, & `n-m,x,y,a-f`: Range from `n` to `m` or multiple values/ranges.
 /// - `*/n`: Every `n`th unit
 /// - `x/n`: Starting at `x` and then every `n`th unit from there
+///
+/// You may get a `NotCorrectFormat` error when using valid multiple value/range notation,
+/// this error is returned if any of the numbers in the notation is `>= 60`.
+/// The reason behind this, is that it is not possible for us to store numbers 60 or bigger,
+/// due to the internal storage setup.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive] // new syntax may be added later (no longer breaking change to add)
 pub enum CronSection {
@@ -280,7 +285,13 @@ impl CronSection {
     #[inline]
     pub const fn within(self, min: u8, max: u8) -> Result<(), u8> {
         debug_assert!(min <= max);
+        debug_assert!(max <= 59);
 
+        #[expect(
+            clippy::as_conversions,
+            clippy::indexing_slicing,
+            clippy::arithmetic_side_effects
+        )]
         match self {
             Self::At(x)
             | Self::EveryNth(x)
@@ -290,9 +301,29 @@ impl CronSection {
             {
                 Err(x)
             }
+            Self::Multiple(x) => {
+                let mut i = 0;
+                while i < min {
+                    if x[i as usize] {
+                        return Err(i);
+                    }
+                    i += 1; // will ever wrap (min is u8, i must be lower than min)
+                }
+
+                if max != 59 {
+                    i = max + 1;
+                    while i < 60 {
+                        if x[i as usize] {
+                            return Err(i);
+                        }
+                        i += 1;
+                    }
+                }
+
+                Ok(())
+            }
             Self::EveryTime
             | Self::At(_)
-            | Self::Multiple(_)
             | Self::EveryNth(_)
             | Self::StartingAtXEveryNth(_, _) => Ok(()),
         }
@@ -426,7 +457,7 @@ macro_rules! get_valid {
             CronSection::Multiple(v) => {
                 let mut arr = [false; $max];
                 let mut i = 1;
-                while i < 32 {
+                while i <= $max {
                     if v[i] {
                         // i's can only be between 1 and $max (exactly)
                         arr[i.saturating_sub(1)] = true;
@@ -961,12 +992,42 @@ mod tests {
     use super::*;
     use crate::alias::format;
 
+    // TODO; add tests to multiple and starting at syntax
+
     #[test]
     fn section_parse_test() {
         // tests that all types of sections can be parsed
         assert_eq!(CronSection::new("*"), Some(CronSection::EveryTime));
         assert_eq!(CronSection::new("2"), Some(CronSection::At(2)));
+        assert_eq!(
+            CronSection::new("2,5,8,1,59,30"),
+            Some(CronSection::Multiple([
+                false, true, true, false, false, true, false, false, true,
+                false, false, false, false, false, false, false, false, false,
+                false, false, false, false, false, false, false, false, false,
+                false, false, false, true, false, false, false, false, false,
+                false, false, false, false, false, false, false, false, false,
+                false, false, false, false, false, false, false, false, false,
+                false, false, false, false, false, true
+            ]))
+        );
+        assert_eq!(
+            CronSection::new("5,8,30-45"),
+            Some(CronSection::Multiple([
+                false, false, false, false, false, true, false, false, true,
+                false, false, false, false, false, false, false, false, false,
+                false, false, false, false, false, false, false, false, false,
+                false, false, false, true, true, true, true, true, true, true,
+                true, true, true, true, true, true, true, true, true, false,
+                false, false, false, false, false, false, false, false, false,
+                false, false, false, false
+            ]))
+        );
         assert_eq!(CronSection::new("*/5"), Some(CronSection::EveryNth(5)));
+        assert_eq!(
+            CronSection::new("56/45"),
+            Some(CronSection::StartingAtXEveryNth(56, 45))
+        );
 
         // tests some bad parsing
         assert_eq!(CronSection::new("woah"), None);
@@ -1072,6 +1133,12 @@ mod tests {
             CronTime::new(&format!("*/{i} * * * *")).unwrap_err();
             CronTime::new(&format!("{i}/{i} * * * *")).unwrap_err();
         }
+        CronTime::new("0-59 * * * *").unwrap();
+        CronTime::new("59-60 * * * *").unwrap_err();
+        CronTime::new(&format!("60-{} * * * *", u8::MAX)).unwrap_err();
+        CronTime::new(&format!("{} * * * *", (0..=59).join(","))).unwrap();
+        CronTime::new(&format!("{} * * * *", (60..=u8::MAX).join(",")))
+            .unwrap_err();
 
         CronTime::new("* 0 * * *").unwrap();
         for i in 1..=23 {
@@ -1084,6 +1151,12 @@ mod tests {
             CronTime::new(&format!("* */{i} * * *")).unwrap_err();
             CronTime::new(&format!("* {i}/{i} * * *")).unwrap_err();
         }
+        CronTime::new("* 0-23 * * *").unwrap();
+        CronTime::new("* 23-24 * * *").unwrap_err();
+        CronTime::new(&format!("* 24-{} * * *", u8::MAX)).unwrap_err();
+        CronTime::new(&format!("* {} * * *", (0..=23).join(","))).unwrap();
+        CronTime::new(&format!("* {} * * *", (24..=u8::MAX).join(",")))
+            .unwrap_err();
 
         for i in 1..=31 {
             CronTime::new(&format!("* * {i} * *")).unwrap();
@@ -1096,6 +1169,13 @@ mod tests {
             CronTime::new(&format!("* * */{i} * *")).unwrap_err();
             CronTime::new(&format!("* * {i}/{i} * *")).unwrap_err();
         }
+        CronTime::new("* * 0-1 * *").unwrap_err();
+        CronTime::new("* * 1-31 * *").unwrap();
+        CronTime::new("* * 31-32 * *").unwrap_err();
+        CronTime::new(&format!("* * 32-{} * *", u8::MAX)).unwrap_err();
+        CronTime::new(&format!("* * {} * *", (1..=31).join(","))).unwrap();
+        CronTime::new(&format!("* * 0,{} * *", (32..=u8::MAX).join(",")))
+            .unwrap_err();
 
         for i in 1..=12 {
             CronTime::new(&format!("* * * {i} *")).unwrap();
@@ -1108,6 +1188,13 @@ mod tests {
             CronTime::new(&format!("* * * */{i} *")).unwrap_err();
             CronTime::new(&format!("* * * {i}/{i} *")).unwrap_err();
         }
+        CronTime::new("* * * 0-1 *").unwrap_err();
+        CronTime::new("* * * 1-12 *").unwrap();
+        CronTime::new("* * * 12-13 *").unwrap_err();
+        CronTime::new(&format!("* * * 13-{} *", u8::MAX)).unwrap_err();
+        CronTime::new(&format!("* * * {} *", (1..=12).join(","))).unwrap();
+        CronTime::new(&format!("* * * 0,{} *", (13..=u8::MAX).join(",")))
+            .unwrap_err();
 
         CronTime::new("* * * * 0").unwrap();
         for i in 1..=7 {
@@ -1120,6 +1207,12 @@ mod tests {
             CronTime::new(&format!("* * * * */{i}")).unwrap_err();
             CronTime::new(&format!("* * * * {i}/{i}")).unwrap_err();
         }
+        CronTime::new("* * * * 0-7").unwrap();
+        CronTime::new("* * * * 7-8").unwrap_err();
+        CronTime::new(&format!("* * * * 8-{}", u8::MAX)).unwrap_err();
+        CronTime::new(&format!("* * * * {}", (0..=7).join(","))).unwrap();
+        CronTime::new(&format!("* * * * {}", (8..=u8::MAX).join(",")))
+            .unwrap_err();
     }
 
     #[test]

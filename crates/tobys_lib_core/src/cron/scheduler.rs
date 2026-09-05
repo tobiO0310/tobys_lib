@@ -461,7 +461,7 @@ mod tests {
             )
             .unwrap(),
             Job::new_with_string(
-                &format!("{} * * * *", (now.minute() + 4) % 60),
+                &format!("{} * * * *", (now.minute() + 3) % 60),
                 || {
                     Box::pin(async {
                         println!("in 3 minutes (+3)");
@@ -486,7 +486,7 @@ mod tests {
                 .get_next_time(now.clone())
                 .duration_since(now.datetime())
                 .unsigned_abs();
-            println!("Sleeping for {} seconds", duration.as_secs());
+            println!("1: Sleeping for {} seconds", duration.as_secs());
             sleep(duration); // wait till next minute
 
             let jobs = scheduler.manual_tick();
@@ -504,7 +504,7 @@ mod tests {
                 .get_next_time(now.clone())
                 .duration_since(now.datetime())
                 .unsigned_abs();
-            println!("Sleeping for {} seconds", duration.as_secs());
+            println!("2: Sleeping for {} seconds", duration.as_secs());
             sleep(duration); // wait till next minute
 
             let jobs = scheduler.manual_tick();
@@ -522,7 +522,7 @@ mod tests {
                 .get_next_time(now.clone())
                 .duration_since(now.datetime())
                 .unsigned_abs();
-            println!("Sleeping for {} seconds", duration.as_secs());
+            println!("3: Sleeping for {} seconds", duration.as_secs());
             sleep(duration); // wait till next minute
 
             let jobs = scheduler.manual_tick();
