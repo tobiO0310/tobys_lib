@@ -11,6 +11,7 @@ keywords.workspace = true
 categories.workspace = true
 
 [dependencies]
+tobys-lib-core = { workspace = true }
 tobys-lib-macros = { workspace = true, optional = true }
 
 num-bigint = { workspace = true, optional = true }
@@ -25,16 +26,20 @@ rand = { workspace = true, features = ["default"] }
 [features]
 full = [
     "bigint",
+    "cron",
     "macros",
     "rand",
     "rayon",
-    "std"
+    "std",
+    "tobys-lib-core/full",
+    "tobys-lib-macros/full"
 ]
 default = ["std"]
-alloc = ["rand?/alloc"]
-std = ["rand?/std", "num-bigint?/std"]
+alloc = ["rand?/alloc", "tobys-lib-core/alloc"]
+std = ["rand?/std", "num-bigint?/std", "tobys-lib-core/std"]
 
 bigint = ["dep:num-bigint", "alloc"]
+cron = ["tobys-lib-core/cron", "tobys-lib-macros?/cron"]
 macros = ["dep:tobys-lib-macros"]
 rand = ["dep:rand", "num-bigint?/rand_0_10"]
 rayon = ["dep:rayon", "std"]

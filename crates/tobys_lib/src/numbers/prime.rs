@@ -17,11 +17,12 @@ mod rabin_miller {
     fn miller_rabin_decompose(n: &BigUint) -> (u64, BigUint) {
         assert!(!n.is_zero() && !n.is_one());
 
-        #[allow(clippy::arithmetic_side_effects, reason = "n is at least 2")]
-        let n = n - 1u8; // n is not zero as per assertion
+        #[expect(clippy::arithmetic_side_effects, reason = "n is at least 2")]
+        let n = n - 1u8; // n is at least 2 as per assertion -> n is now at least 1
+        #[expect(clippy::unwrap_used, reason = "n is not zero")]
         let s = n.trailing_zeros().unwrap();
 
-        #[allow(
+        #[expect(
             clippy::arithmetic_side_effects,
             reason = "causes no overflow/underflow"
         )]
@@ -35,7 +36,7 @@ mod rabin_miller {
     ) -> bool {
         assert!(!num.is_zero());
 
-        #[allow(clippy::arithmetic_side_effects, reason = "n is at least 1")]
+        #[expect(clippy::arithmetic_side_effects, reason = "n is at least 1")]
         let n_minus_1 = num - 1u8;
         let one = BigUint::one();
         let two = biguint!(2);
@@ -69,19 +70,20 @@ mod rabin_miller {
     pub fn is_probable_prime<T: ToBigUint, R: Rng + Send + Sync>(
         n: &T,
         k: usize,
-        mut rng: R,
+        rng: &mut R,
     ) -> Option<bool> {
         use crate::alias::{repeat_with, vec};
 
         let n = &n.to_biguint()?;
         let two = &biguint!(2);
 
-        if n <= &BigUint::one() {
+        if n <= &BigUint::one() || !n.bit(0) && n != two {
+            // if n is <= 1, or even and not two
             return Some(false);
         } else if n <= &biguint!(3) {
             return Some(true);
         } else if n <= &biguint!(0xFFFF_FFFF_FFFF_FFFFu64) {
-            #[allow(
+            #[expect(
                 clippy::arithmetic_side_effects,
                 reason = "n is at least 3"
             )]
@@ -104,21 +106,22 @@ mod rabin_miller {
             );
         }
 
-        #[allow(clippy::arithmetic_side_effects, reason = "n is at least 3")]
+        #[expect(clippy::arithmetic_side_effects, reason = "n is at least 3")]
         let n_minus_one: BigUint = n - 1u8;
         let (s, d) = miller_rabin_decompose(n);
 
-        #[allow(
+        #[expect(
             clippy::cast_possible_truncation,
+            clippy::as_conversions,
             reason = "bits will never overflow??"
         )]
         let bits = n_minus_one.bits() as u32;
-        #[allow(
+        #[expect(
             clippy::arithmetic_side_effects,
             reason = "bits should be at least 2"
         )]
         let min = two.pow(bits - 1);
-        #[allow(
+        #[expect(
             clippy::arithmetic_side_effects,
             reason = "bits should be at least 2"
         )]
@@ -129,7 +132,7 @@ mod rabin_miller {
             repeat_with(|| rng.random_biguint_range(&min, &max))
                 .filter(|m| m < &n_minus_one)
                 .take(k)
-                .find(|a| miller_rabin(a, &n, s, &d))
+                .find(|a| miller_rabin(a, n, s, &d))
                 .is_some(),
         );
 
@@ -152,18 +155,22 @@ mod rabin_miller {
         #[test]
         fn simple_test() {
             let mut rng: StdRng = rand::make_rng();
-            assert!(is_probable_prime(&5u8, 10, &mut rng).unwrap());
-            assert!(!is_probable_prime(&6u8, 10, &mut rng).unwrap());
-            assert!(!is_probable_prime(&8u8, 10, &mut rng).unwrap());
-            assert!(!is_probable_prime(&9u8, 10, &mut rng).unwrap());
-            assert!(
-                !is_probable_prime(&949_284_328_995u64, 10, &mut rng).unwrap()
+
+            assert_eq!(is_probable_prime(&5u8, 10, &mut rng), Some(true));
+            assert_eq!(is_probable_prime(&6u8, 10, &mut rng), Some(false));
+            assert_eq!(is_probable_prime(&8u8, 10, &mut rng), Some(false));
+            assert_eq!(is_probable_prime(&9u8, 10, &mut rng), Some(false));
+            assert_eq!(
+                is_probable_prime(&949_284_328_995u64, 10, &mut rng),
+                Some(false)
             );
-            assert!(
-                !is_probable_prime(&949_284_328_996u64, 10, &mut rng).unwrap()
+            assert_eq!(
+                is_probable_prime(&949_284_328_996u64, 10, &mut rng),
+                Some(false)
             );
-            assert!(
-                is_probable_prime(&252_097_800_623u64, 10, &mut rng).unwrap()
+            assert_eq!(
+                is_probable_prime(&252_097_800_623u64, 10, &mut rng),
+                Some(true)
             );
         }
     }

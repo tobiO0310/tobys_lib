@@ -9,9 +9,28 @@ pub mod numbers;
 
 #[cfg(feature = "macros")]
 #[cfg_attr(docsrs, doc(cfg(feature = "macros")))]
-pub mod macros {
-    //! A few custom macros that can simply development, see more in [`tobys_lib_macros`].
+#[doc(inline)]
+pub use tobys_lib_macros::*;
 
+#[cfg(all(feature = "cron", any(feature = "alloc", feature = "std")))]
+#[cfg_attr(
+    docsrs,
+    doc(cfg(all(feature = "cron", any(feature = "alloc", feature = "std"))))
+)]
+pub mod cron {
+    //! Cron scheduling structs and functions.
+    //!
+    //! ## Example
+    //!
+    //! ## Macro
+    //!
+    //! If `macros` feature is enabled, two macros are available;
+    //! - [`create_cron_time`] macro is available to test cron time at compile-time.
+    //! - [`create_cron_jobs`] macro is available to create multiple jobs at the same time.
+    //!
+    //!
+    //! [`create_cron_time`]: crate::create_cron_time
+    //! [`create_cron_jobs`]: crate::create_cron_jobs
     #[doc(inline)]
-    pub use tobys_lib_macros::*;
+    pub use tobys_lib_core::cron::*;
 }
