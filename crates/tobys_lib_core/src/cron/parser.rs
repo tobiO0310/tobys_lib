@@ -995,6 +995,8 @@ impl CronTime {
 
 #[cfg(test)]
 mod tests {
+    #![expect(clippy::unwrap_used)]
+
     use super::*;
     use crate::alias::format;
 

@@ -401,6 +401,8 @@ impl FromIterator<Job> for Scheduler<Uninitialized> {
 #[cfg(feature = "std")] // will require std to actually do some async work here lol
 #[cfg(test)]
 mod tests {
+    #![expect(clippy::unwrap_used)]
+
     use futures::future::join_all;
     use tokio::runtime::Runtime;
 
