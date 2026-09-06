@@ -77,7 +77,8 @@ mod rabin_miller {
         let n = &n.to_biguint()?;
         let two = &biguint!(2);
 
-        if n <= &BigUint::one() {
+        if n <= &BigUint::one() || !n.bit(0) && n != two {
+            // if n is <= 1, or even and not two
             return Some(false);
         } else if n <= &biguint!(3) {
             return Some(true);
