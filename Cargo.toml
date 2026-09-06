@@ -6,6 +6,9 @@ members = [
 default-members = [
     "crates/*"
 ]
+exclude = [
+    "tobys_std"
+]
 
 [workspace.package]
 description = "Toby's little library of custom stuff"

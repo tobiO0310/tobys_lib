@@ -1,0 +1,76 @@
+[package]
+name = "tobys-std"
+description = "Toby's standard rust setup"
+version = "0.0.1"
+edition = "2024"
+rust-version = "1.98.0"
+
+license = "MIT"
+repository = "https://github.com/tobiO0310/tobys_lib"
+
+[dependencies]
+itertools = { version = "0.15.0" }
+jiff = { version = "0.2.35" }
+rayon = { version = "1.12.0" }
+serde = { version = "1.0.229" }
+
+
+[dev-dependencies]
+
+[profile.release]
+lto = true
+
+[features]
+
+# docs.rs-specific configuration
+[package.metadata.docs.rs]
+# document all features
+all-features = true
+# defines the configuration attribute `docsrs`
+rustdoc-args = ["--cfg", "docsrs"]
+
+[lints.rust]
+elided_lifetimes_in_paths = "warn"
+future_incompatible = { level = "warn", priority = -1 }
+nonstandard_style = { level = "warn", priority = -1 }
+rust_2018_idioms = { level = "warn", priority = -1 }
+rust_2021_prelude_collisions = "warn"
+semicolon_in_expressions_from_macros = "warn"
+trivial_numeric_casts = "warn"
+unexpected_cfgs = "warn"
+
+unused_qualifications = "warn"
+
+[lints.rustdoc]
+all = "warn"
+missing_crate_level_docs = "warn"
+broken_intra_doc_links = "deny"
+
+[lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+absolute_paths = "warn"
+
+arithmetic_side_effects = "warn"
+undocumented_unsafe_blocks = "warn"
+ptr_as_ptr = "warn"
+cast_possible_truncation = "warn"
+cast_sign_loss = "warn"
+cast_possible_wrap = "warn"
+exit = "warn"
+tests_outside_test_module = "warn"
+assertions_on_result_states = "warn"
+error_impl_error = "warn"
+or_fun_call = "warn"
+
+# DENY PANICS
+unwrap_used = "deny"
+expect_used = "deny"
+indexing_slicing = "deny"
+unreachable = "deny"
+unimplemented = "deny"
+unchecked_time_subtraction = "deny"
+todo = "deny"
+string_slice = "deny"
+panic_in_result_fn = "deny"
+panic = "deny"
+as_conversions = "deny"
