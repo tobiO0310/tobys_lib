@@ -143,18 +143,21 @@ mod rabin_miller {
         fn simple_test() {
             let mut rng = rand::rng();
 
-            assert!(is_probable_prime(&5u8, 10, &mut rng).unwrap());
-            assert!(!is_probable_prime(&6u8, 10, &mut rng).unwrap());
-            assert!(!is_probable_prime(&8u8, 10, &mut rng).unwrap());
-            assert!(!is_probable_prime(&9u8, 10, &mut rng).unwrap());
-            assert!(
-                !is_probable_prime(&949_284_328_995u64, 10, &mut rng).unwrap()
+            assert_eq!(is_probable_prime(&5u8, 10, &mut rng), Some(true));
+            assert_eq!(is_probable_prime(&6u8, 10, &mut rng), Some(false));
+            assert_eq!(is_probable_prime(&8u8, 10, &mut rng), Some(false));
+            assert_eq!(is_probable_prime(&9u8, 10, &mut rng), Some(false));
+            assert_eq!(
+                is_probable_prime(&949_284_328_995u64, 10, &mut rng),
+                Some(false)
             );
-            assert!(
-                !is_probable_prime(&949_284_328_996u64, 10, &mut rng).unwrap()
+            assert_eq!(
+                is_probable_prime(&949_284_328_996u64, 10, &mut rng),
+                Some(false)
             );
-            assert!(
-                is_probable_prime(&252_097_800_623u64, 10, &mut rng).unwrap()
+            assert_eq!(
+                is_probable_prime(&252_097_800_623u64, 10, &mut rng),
+                Some(true)
             );
         }
     }
