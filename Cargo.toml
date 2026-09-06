@@ -6,6 +6,9 @@ members = [
 default-members = [
     "crates/*"
 ]
+exclude = [
+    "tobys_std"
+]
 
 [workspace.package]
 description = "Toby's little library of custom stuff"
@@ -19,13 +22,24 @@ keywords = ["little", "library"]
 categories = ["development-tools"]
 
 [workspace.dependencies]
+tobys-lib = { path = "crates/tobys_lib", version = "0.0", default-features = false }
+tobys-lib-core = { path = "crates/tobys_lib_core", version = "0.0", default-features = false }
+tobys-lib-macros = { path = "crates/tobys_lib_macros", version = "0.0", default-features = false }
 
-tobys-lib-macros = { path = "crates/tobys_lib_macros", version = "0.0" }
+rand = { version = "0.10.2", default-features = false }
+futures = { version = "0.3.34", default-features = false }
+num-bigint = { version = "0.5.1", default-features = false }
+num-traits = { version = "0.2.19", default-features = false }
+rayon = { version = "1.12.0", default-features = false }
+tokio = { version = "1.53.1", default-features = false }
+
+itertools = { version = "0.15.0", default-features = false }
+jiff = { version = "0.2.35", default-features = false }
+thiserror = { version = "2.0.20", default-features = false }
 
 proc-macro2 = { version = "1.0.107", default-features = false }
 quote = { version = "1.0.47", default-features = false }
 syn = { version = "3.0.3", features = ["full"] }
-trybuild = { version = "1.0.120" }
 
 [profile.release]
 lto = true
@@ -35,6 +49,7 @@ elided_lifetimes_in_paths = "warn"
 future_incompatible = { level = "warn", priority = -1 }
 nonstandard_style = { level = "warn", priority = -1 }
 rust_2018_idioms = { level = "warn", priority = -1 }
+unused = { level = "warn", priority = -1 }
 rust_2021_prelude_collisions = "warn"
 semicolon_in_expressions_from_macros = "warn"
 trivial_numeric_casts = "warn"
@@ -48,7 +63,7 @@ missing_crate_level_docs = "warn"
 broken_intra_doc_links = "deny"
 
 [workspace.lints.clippy]
-pedantic = "warn"
+pedantic = { level = "warn", priority = -1 }
 absolute_paths = "warn"
 
 arithmetic_side_effects = "warn"
@@ -62,3 +77,16 @@ tests_outside_test_module = "warn"
 assertions_on_result_states = "warn"
 error_impl_error = "warn"
 or_fun_call = "warn"
+
+# DENY PANICS
+unwrap_used = "deny"
+expect_used = "deny"
+indexing_slicing = "deny"
+unreachable = "deny"
+unimplemented = "deny"
+unchecked_time_subtraction = "deny"
+todo = "deny"
+string_slice = "deny"
+panic_in_result_fn = "deny"
+panic = "deny"
+as_conversions = "deny"

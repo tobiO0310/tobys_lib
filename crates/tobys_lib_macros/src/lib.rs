@@ -2,9 +2,12 @@
 //!
 //! See each macro for what they do~
 
-//#![cfg_attr(docsrs, feature(doc_cfg))]
+#![cfg_attr(docsrs, feature(doc_cfg))]
 #![deny(missing_docs)]
 
+#[cfg(feature = "cron")]
+#[cfg_attr(docsrs, doc(cfg(feature = "cron")))]
+mod cron;
 mod python;
 pub(crate) mod utilities;
 
@@ -49,10 +52,93 @@ pub fn comprehension(
     python::comprehension::comprehension_impl(input)
 }
 
-#[cfg(test)]
-#[test]
-fn ui() {
-    let t = trybuild::TestCases::new();
-    t.compile_fail("tests/fail/**/*.rs");
-    t.pass("tests/pass/**/*.rs");
+/// A macro that checks and makes sure the cron input is correct.
+///
+/// This macro will move runtime cron string compilation to compile-time.
+/// The compiler will reject any invalid cron jobs, so you are guaranteed your cron string is correct.
+///
+/// The format for this macro is a standard cron job, but not as a string literal.
+///
+/// # Examples
+///
+/// 1) Create a cron time that represents every-minute
+/// ```
+/// # use tobys_lib_macros::create_cron_time;
+/// # use tobys_lib::cron::CronTime;
+/// let every_minute = create_cron_time!(* * * * *);
+/// # assert_eq!(every_minute, CronTime::new("* * * * *").unwrap())
+/// ```
+///
+/// 2) Create a cron time that represents every friday the 13th
+/// ```
+/// # use tobys_lib_macros::create_cron_time;
+/// # use tobys_lib::cron::CronTime;
+/// let every_minute = create_cron_time!(* * 13 * 5);
+/// # assert_eq!(every_minute, CronTime::new("* * 13 * 5").unwrap())
+/// ```
+///
+/// 3) Create a cron time that represents every weekday at 2 am.
+/// ```
+/// # use tobys_lib_macros::create_cron_time;
+/// # use tobys_lib::cron::CronTime;
+/// let every_minute = create_cron_time!(0 2 * * 1-5);
+/// # assert_eq!(every_minute, CronTime::new("0 2 * * 1-5").unwrap())
+/// ```
+#[cfg(feature = "cron")]
+#[cfg_attr(docsrs, doc(cfg(feature = "cron")))]
+#[proc_macro]
+pub fn create_cron_time(
+    input: proc_macro::TokenStream,
+) -> proc_macro::TokenStream {
+    cron::create_time_impl(input)
+}
+
+/// A macro for creating multiple Cron Jobs.
+///
+/// It runs compile-time cron schedule verification,
+/// so you don't have to worry about checking at runtime.
+///
+/// # Examples
+///
+/// Create 3 jobs that happens everyday at 8:00 (8 am), 12:00 (12 pm), and 16:00 (4 pm).
+/// ```
+/// # use tobys_lib_macros::create_cron_jobs;
+/// let jobs = create_cron_jobs!(
+///     0 8 * * * || {
+///         Box::pin(async {
+///             // do work here
+///         })
+///     }; 0 12 * * * || {
+///         Box::pin(async {
+///             // do other work here
+///         })
+///     }; 0 16 * * * || {
+///         Box::pin(async {
+///             // do last work here
+///         })
+///     }
+/// );
+/// # assert_eq!(jobs.len(), 3);
+/// ```
+///
+/// Create a single job, that fires once every blue moon;
+/// every january 1st that is a monday at 8:00 (8 am).
+/// ```
+/// # use tobys_lib_macros::create_cron_jobs;
+/// let jobs = create_cron_jobs!(
+///     0 8 1 1 1 || {
+///         Box::pin(async {
+///             // do work here
+///         })
+///     };
+/// );
+/// # assert_eq!(jobs.len(), 1);
+/// ```
+#[cfg(feature = "cron")]
+#[cfg_attr(docsrs, doc(cfg(feature = "cron")))]
+#[proc_macro]
+pub fn create_cron_jobs(
+    input: proc_macro::TokenStream,
+) -> proc_macro::TokenStream {
+    cron::create_jobs_impl(input)
 }

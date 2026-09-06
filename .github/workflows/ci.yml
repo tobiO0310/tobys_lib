@@ -10,12 +10,21 @@ on:
             - synchronize
             - ready_for_review
 
+env:
+    CARGO_HACK_ARGUMENTS: >-
+        --verbose --rust-version --workspace --all-targets
+        --ignore-private --feature-powerset --skip full,default
+        --mutually-exclusive-features std,alloc
+        --mutually-exclusive-features bigint,alloc
+    # std will always override alloc
+    # bigint automatically enables alloc
+
 jobs:
     pre_ci:
         name: Meta Tests # run some tests like rust version control and style check
         runs-on: ubuntu-latest
         if: ${{ !github.event.pull_request.draft }}
-        
+
         steps:
             - uses: actions/checkout@v6
 
@@ -24,12 +33,11 @@ jobs:
                   tool: rust+clippy,rust@nightly+rustfmt,cargo-binstall,cargo-hack
             - run: rustup default stable
 
-            - run: cargo hack check --rust-version --workspace --all-targets --ignore-private --feature-powerset
-            - run: cargo hack check -r --rust-version --workspace --all-targets --ignore-private --feature-powerset
-              # ^ fail if code cannot be run with rust version specified in Cargo.toml
-            - run: cargo clippy -- -D warnings
+            - run: cargo hack check ${{ env.CARGO_HACK_ARGUMENTS }}
+              # ^ fail if code cannot be compiled with rust version specified in Cargo.toml in all feature-combinations
+            - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
               # ^ fail on warnings by clippy
-            - run: RUSTDOCFLAGS="-D warnings --cfg docsrs" cargo +nightly doc -all-features --no-deps
+            - run: RUSTDOCFLAGS="-D warnings --cfg docsrs" cargo +nightly doc --all-features
               # ^ fail on documentation warnings
             - run: cargo +nightly fmt --all --check
               # ^ fail when fmt was not run
@@ -48,7 +56,8 @@ jobs:
             - uses: actions/checkout@v6
             - uses: taiki-e/install-action@v2
               with:
-                  tool: rust@${{ matrix.toolchain }},cargo-binstall
+                  tool: rust@${{ matrix.toolchain }},cargo-hack
 
             - run: cargo build --verbose
-            - run: cargo test --verbose
+            - run:
+                  cargo hack test ${{ env.CARGO_HACK_ARGUMENTS }}
