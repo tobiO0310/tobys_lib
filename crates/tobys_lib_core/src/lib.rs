@@ -5,7 +5,7 @@
 #![deny(missing_docs)]
 
 mod alias;
-#[cfg(all(feature = "cron", any(feature = "alloc", feature = "std")))]
+#[cfg(all(feature = "cron", feature = "alloc"))]
 #[cfg_attr(
     docsrs,
     doc(cfg(all(feature = "cron", any(feature = "alloc", feature = "std"))))

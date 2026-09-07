@@ -24,7 +24,7 @@ tobys-lib = { workspace = true, features = ["full"] }
 full = ["cron", "std"]
 default = ["std"]
 alloc = ["jiff?/alloc", "itertools/use_alloc"]
-std = ["thiserror/std", "jiff?/std", "itertools/use_std"]
+std = ["alloc", "thiserror/std", "jiff?/std", "itertools/use_std"]
 
 cron = ["dep:jiff"]
 

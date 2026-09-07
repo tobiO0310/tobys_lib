@@ -6,7 +6,6 @@
 #![deny(missing_docs)]
 
 #[cfg(feature = "cron")]
-#[cfg_attr(docsrs, doc(cfg(feature = "cron")))]
 mod cron;
 mod python;
 pub(crate) mod utilities;
@@ -85,7 +84,6 @@ pub fn comprehension(
 /// # assert_eq!(every_minute, CronTime::new("0 2 * * 1-5").unwrap())
 /// ```
 #[cfg(feature = "cron")]
-#[cfg_attr(docsrs, doc(cfg(feature = "cron")))]
 #[proc_macro]
 pub fn create_cron_time(
     input: proc_macro::TokenStream,
@@ -135,7 +133,6 @@ pub fn create_cron_time(
 /// # assert_eq!(jobs.len(), 1);
 /// ```
 #[cfg(feature = "cron")]
-#[cfg_attr(docsrs, doc(cfg(feature = "cron")))]
 #[proc_macro]
 pub fn create_cron_jobs(
     input: proc_macro::TokenStream,

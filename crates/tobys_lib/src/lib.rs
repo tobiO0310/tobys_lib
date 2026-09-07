@@ -6,13 +6,15 @@
 
 mod alias;
 pub mod numbers;
+#[cfg(feature = "alloc")]
+#[cfg_attr(docsrs, doc(cfg(any(feature = "alloc", feature = "std"))))]
+pub mod trees;
 
 #[cfg(feature = "macros")]
-#[cfg_attr(docsrs, doc(cfg(feature = "macros")))]
 #[doc(inline)]
 pub use tobys_lib_macros::*;
 
-#[cfg(all(feature = "cron", any(feature = "alloc", feature = "std")))]
+#[cfg(all(feature = "cron", feature = "alloc"))]
 #[cfg_attr(
     docsrs,
     doc(cfg(all(feature = "cron", any(feature = "alloc", feature = "std"))))
