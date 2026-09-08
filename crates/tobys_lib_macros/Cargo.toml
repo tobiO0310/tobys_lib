@@ -19,9 +19,17 @@ syn = { workspace = true }
 quote = { workspace = true }
 
 [dev-dependencies]
-trybuild = { workspace = true }
+futures = { workspace = true, features = ["std"] }
+tokio = { workspace = true, features = ["full", "test-util"] }
+tobys-lib = { workspace = true, features = ["full"] }
 
 [features]
+full = [
+    "cron"
+]
+cron = []
+
+# This feature is useful during debugging
 extra-traits = ["syn/extra-traits"]
 
 # docs.rs-specific configuration

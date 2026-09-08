@@ -1,0 +1,39 @@
+[package]
+name = "tobys-lib-core"
+description.workspace = true
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+license.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
+
+[dependencies]
+itertools = { workspace = true }
+jiff = { workspace = true, optional = true }
+thiserror = { workspace = true }
+
+[dev-dependencies]
+futures = { workspace = true, features = ["std"] }
+tokio = { workspace = true, features = ["full"] }
+tobys-lib = { workspace = true, features = ["full"] }
+
+[features]
+full = ["cron", "std"]
+default = ["std"]
+alloc = ["jiff?/alloc", "itertools/use_alloc"]
+std = ["alloc", "thiserror/std", "jiff?/std", "itertools/use_std"]
+
+cron = ["dep:jiff"]
+
+# docs.rs-specific configuration
+[package.metadata.docs.rs]
+# document all features
+all-features = true
+# defines the configuration attribute `docsrs`
+rustdoc-args = ["--cfg", "docsrs"]
+
+[lints]
+workspace = true
