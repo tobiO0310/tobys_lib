@@ -1,3 +1,5 @@
+.PHONY: build check clippy doc format test b c d f t
+
 build:
 	cargo build --workspace --all-features
 check:

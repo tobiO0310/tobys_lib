@@ -12,7 +12,7 @@ on:
 
 env:
     CARGO_HACK_ARGUMENTS: >-
-        --verbose --rust-version --workspace --all-targets
+        --verbose --rust-version --workspace
         --ignore-private --feature-powerset --skip full,default
         --mutually-exclusive-features std,alloc
         --mutually-exclusive-features bigint,alloc
@@ -33,7 +33,9 @@ jobs:
                   tool: rust+clippy,rust@nightly+rustfmt,cargo-binstall,cargo-hack
             - run: rustup default stable
 
-            - run: cargo hack check ${{ env.CARGO_HACK_ARGUMENTS }}
+            - run: |
+                  cargo hack check ${{ env.CARGO_HACK_ARGUMENTS }} --all-targets
+                  cargo hack check ${{ env.CARGO_HACK_ARGUMENTS }} --doc
               # ^ fail if code cannot be compiled with rust version specified in Cargo.toml in all feature-combinations
             - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
               # ^ fail on warnings by clippy
@@ -59,5 +61,6 @@ jobs:
                   tool: rust@${{ matrix.toolchain }},cargo-hack
 
             - run: cargo build --verbose
-            - run:
-                  cargo hack test ${{ env.CARGO_HACK_ARGUMENTS }}
+            - run: |
+                  cargo hack test ${{ env.CARGO_HACK_ARGUMENTS }} --all-targets
+                  cargo hack test ${{ env.CARGO_HACK_ARGUMENTS }} --doc
