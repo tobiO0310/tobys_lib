@@ -17,7 +17,7 @@ jobs:
         if: ${{ !github.event.pull_request.draft }}
         
         steps:
-            - uses: actions/checkout@v6
+            - uses: actions/checkout@v7
 
             - uses: taiki-e/install-action@v2
               with:
@@ -45,7 +45,7 @@ jobs:
                     - beta
                     - nightly
         steps:
-            - uses: actions/checkout@v6
+            - uses: actions/checkout@v7
             - uses: taiki-e/install-action@v2
               with:
                   tool: rust@${{ matrix.toolchain }},cargo-binstall
