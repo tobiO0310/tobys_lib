@@ -4,18 +4,24 @@
 )]
 
 #[cfg(all(feature = "alloc", not(feature = "std")))]
-extern crate alloc;
+mod lib {
+    extern crate alloc;
 
-#[cfg(all(feature = "alloc", not(feature = "std")))]
-pub use alloc::vec;
-#[cfg(all(feature = "alloc", not(feature = "std")))]
-pub use alloc::vec::Vec;
+    pub use alloc::{boxed::Box, collections::VecDeque, vec, vec::Vec};
+    pub use core::iter::repeat_with;
 
-#[cfg(not(feature = "std"))]
-pub use ::core::iter::repeat_with;
+    pub use hashbrown::{HashMap, hash_map::Entry};
+}
+
 #[cfg(feature = "std")]
-pub use ::std::iter::repeat_with;
-#[cfg(feature = "std")]
-pub use ::std::vec;
-#[cfg(feature = "std")]
-pub use ::std::vec::Vec;
+mod lib {
+    pub use std::{
+        boxed::Box,
+        collections::{HashMap, VecDeque, hash_map::Entry},
+        iter::repeat_with,
+        vec,
+        vec::Vec,
+    };
+}
+
+pub use lib::*;
