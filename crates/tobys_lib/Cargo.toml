@@ -14,10 +14,13 @@ categories.workspace = true
 tobys-lib-core = { workspace = true }
 tobys-lib-macros = { workspace = true, optional = true }
 
+hashbrown = { workspace = true, optional = true }
+itertools = { workspace = true }
 num-bigint = { workspace = true, optional = true }
 num-traits = { workspace = true }
 rand = { workspace = true, optional = true }
 rayon = { workspace = true, optional = true }
+serde = { workspace = true, optional = true, features = ["derive"] }
 
 [dev-dependencies]
 
@@ -30,19 +33,21 @@ full = [
     "macros",
     "rand",
     "rayon",
+    "serde",
     "std",
     "tobys-lib-core/full",
     "tobys-lib-macros/full"
 ]
 default = ["std"]
-alloc = ["rand?/alloc", "tobys-lib-core/alloc"]
-std = ["rand?/std", "num-bigint?/std", "tobys-lib-core/std"]
+alloc = ["dep:hashbrown", "tobys-lib-core/alloc", "itertools/use_alloc", "rand?/alloc", "serde?/alloc"]
+std = ["alloc", "tobys-lib-core/std", "itertools/use_std", "num-bigint?/std", "rand?/std", "serde?/std"]
 
 bigint = ["dep:num-bigint", "alloc"]
 cron = ["tobys-lib-core/cron", "tobys-lib-macros?/cron"]
 macros = ["dep:tobys-lib-macros"]
 rand = ["dep:rand", "num-bigint?/rand_0_10"]
-rayon = ["dep:rayon", "std"]
+rayon = ["dep:rayon", "hashbrown?/rayon", "std"]
+serde = ["dep:serde", "hashbrown?/serde"]
 
 # docs.rs-specific configuration
 [package.metadata.docs.rs]
