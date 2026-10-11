@@ -1,5 +1,9 @@
 # Toby's Lib
 
+> [!IMPORTANT]
+> This repository has been archived and moved to https://forgejo.tobysch.eu/tobio0310/tobys_lib
+> Do not expect updates on here.
+
 A simple library that I will fill with functions, structs and macros
 that I feel like using over and over again, especially across different crates.
 
